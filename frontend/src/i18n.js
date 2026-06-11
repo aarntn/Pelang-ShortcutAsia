@@ -53,6 +53,12 @@ const en = {
   registerKWSP: "Register at KWSP →",
   dismiss: "Dismiss",
 
+  // Edit sheet
+  saveChanges: "Save changes",
+  deleteShift: "Delete shift",
+  shiftDeleted: "Shift deleted",
+  undoLabel: "Undo",
+
   // Rights card
   rightsCardSummary: "Know Your Rights · Act 872",
   rights: [
@@ -140,6 +146,12 @@ const bm = {
     "Di bawah Belanjawan 2026, kerajaan akan memadankan caruman KWSP sukarela anda sehingga RM600 setahun (RM6,000 seumur hidup) melalui i-Saraan Plus. Sebagai pekerja gig berdaftar di bawah Akta 872, anda layak — kebanyakan belum mengaktifkannya lagi.\n\nNota: Caruman KWSP tidak termasuk dalam fasa pertama Akta 872. Simpanan KWSP mandatori akan dipertimbangkan dalam fasa kemudian. Padanan sukarela i-Saraan Plus adalah insentif yang relevan untuk anda hari ini.\n\nBerasingan, Belanjawan 2026 menawarkan subsidi PERKESO 70% untuk pendaftar baharu dalam sektor bukan mandatori (50% pada tahun kedua). Ini tidak terpakai kepada penunggang platform — PERKESO anda sudah mandatori dan ditolak setiap syif di bawah Akta 872.",
   registerKWSP: "Daftar di KWSP →",
   dismiss: "Tutup",
+
+  // Edit sheet
+  saveChanges: "Simpan perubahan",
+  deleteShift: "Padam syif",
+  shiftDeleted: "Syif dipadam",
+  undoLabel: "Batal",
 
   // Rights card
   rightsCardSummary: "Hak Anda · Akta 872",
