@@ -85,14 +85,22 @@ def create_shift(payload: ShiftCreate):
     return Shift(id=ref.id, **doc)
 
 
+def _require_owned_shift(db, shift_id: str, user_id: str):
+    """Return the DocumentReference for shift_id after verifying ownership.
+
+    Raises 404 (never 403) so callers cannot probe for document existence.
+    """
+    ref = db.collection("shifts").document(shift_id)
+    snap = ref.get()
+    if not snap.exists or snap.to_dict().get("user_id") != user_id:
+        raise HTTPException(status_code=404, detail="Shift not found")
+    return ref, snap
+
+
 @app.patch("/shifts/{shift_id}", response_model=Shift)
 def update_shift(shift_id: str, payload: ShiftUpdate):
     db = get_db()
-    ref = db.collection("shifts").document(shift_id)
-    snap = ref.get()
-    # Never 403 — always 404 to avoid leaking document existence.
-    if not snap.exists or snap.to_dict()["user_id"] != payload.user_id:
-        raise HTTPException(status_code=404, detail="Shift not found")
+    ref, snap = _require_owned_shift(db, shift_id, payload.user_id)
 
     updates: dict = {}
     if payload.amount is not None:
@@ -111,10 +119,7 @@ def update_shift(shift_id: str, payload: ShiftUpdate):
 @app.delete("/shifts/{shift_id}", response_model=DeleteResponse)
 def delete_shift(shift_id: str, user_id: str):
     db = get_db()
-    ref = db.collection("shifts").document(shift_id)
-    snap = ref.get()
-    if not snap.exists or snap.to_dict()["user_id"] != user_id:
-        raise HTTPException(status_code=404, detail="Shift not found")
+    ref, _ = _require_owned_shift(db, shift_id, user_id)
     ref.delete()
     return DeleteResponse(deleted=shift_id)
 
