@@ -1,0 +1,129 @@
+"""GigShield MY — FastAPI backend.
+
+Routes:
+    GET  /ping                health check
+    POST /shifts              log a shift (SOCSO auto-calculated)
+    GET  /shifts/{user_id}    all shifts + aggregated summary
+"""
+import os
+from collections import defaultdict
+from datetime import datetime, timezone
+
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+
+from firebase_client import get_db
+from models import (
+    SOCSO_RATE,
+    Shift,
+    ShiftCreate,
+    ShiftsResponse,
+    ShiftSummary,
+)
+
+app = FastAPI(title="GigShield MY API", version="1.0.0")
+
+# CORS — localhost for dev, Vercel domain via env var for production.
+allowed_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+frontend_url = os.environ.get("FRONTEND_URL")
+if frontend_url:
+    allowed_origins.append(frontend_url.rstrip("/"))
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
+
+
+def iso_week_label(dt: datetime) -> str:
+    """ISO week label, e.g. 2026-W24."""
+    iso = dt.isocalendar()
+    return f"{iso.year}-W{iso.week:02d}"
+
+
+@app.get("/ping")
+def ping():
+    return {"status": "ok"}
+
+
+@app.post("/shifts", response_model=Shift)
+def create_shift(payload: ShiftCreate):
+    db = get_db()
+    now = datetime.now(timezone.utc)
+
+    socso = round(payload.amount * SOCSO_RATE, 2)
+    doc = {
+        "user_id": payload.user_id,
+        "platform": payload.platform.value,
+        "amount": payload.amount,
+        "socso_deducted": socso,
+        "logged_at": now,
+        "week_label": iso_week_label(now),
+    }
+    ref = db.collection("shifts").document()
+    ref.set(doc)
+
+    # Ensure the user document exists (first shift creates it).
+    user_ref = db.collection("users").document(payload.user_id)
+    if not user_ref.get().exists:
+        user_ref.set({
+            "platform_default": payload.platform.value,
+            "created_at": now,
+            "epf_nudge_sent": False,
+        })
+
+    return Shift(id=ref.id, **doc)
+
+
+@app.get("/shifts/{user_id}", response_model=ShiftsResponse)
+def list_shifts(user_id: str):
+    if not user_id.strip():
+        raise HTTPException(status_code=400, detail="user_id is required")
+
+    db = get_db()
+    docs = (
+        db.collection("shifts")
+        .where("user_id", "==", user_id)
+        .order_by("logged_at", direction="DESCENDING")
+        .stream()
+    )
+
+    shifts: list[Shift] = []
+    for d in docs:
+        data = d.to_dict()
+        shifts.append(Shift(id=d.id, **data))
+
+    current_week = iso_week_label(datetime.now(timezone.utc))
+
+    total_all = 0.0
+    total_week = 0.0
+    socso_all = 0.0
+    socso_week = 0.0
+    by_platform: dict[str, float] = defaultdict(float)
+    week_count = 0
+
+    for s in shifts:
+        total_all += s.amount
+        socso_all += s.socso_deducted
+        by_platform[s.platform.value] += s.amount
+        if s.week_label == current_week:
+            total_week += s.amount
+            socso_week += s.socso_deducted
+            week_count += 1
+
+    summary = ShiftSummary(
+        total_earned_all_time=round(total_all, 2),
+        total_earned_this_week=round(total_week, 2),
+        total_socso_all_time=round(socso_all, 2),
+        total_socso_this_week=round(socso_week, 2),
+        breakdown_by_platform={k: round(v, 2) for k, v in by_platform.items()},
+        shift_count_this_week=week_count,
+    )
+
+    return ShiftsResponse(shifts=shifts, summary=summary)

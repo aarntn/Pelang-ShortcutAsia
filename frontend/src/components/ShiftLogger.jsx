@@ -1,0 +1,159 @@
+import { useEffect, useRef, useState } from "react";
+import { logShift } from "../api";
+import { PLATFORMS } from "../platforms";
+import { useLang } from "../context/LanguageContext";
+
+const SHORT_LABELS = {
+  grab:       "Grab",
+  foodpanda:  "Panda",
+  lalamove:   "Lala",
+  shopeefood: "Shopee",
+  maxim:      "Maxim",
+  indrive:    "inDrive",
+  other:      "Other",
+};
+
+export default function ShiftLogger({ userId, onLogged }) {
+  const { t } = useLang();
+  const [expanded, setExpanded] = useState(false);
+  const [platform, setPlatform] = useState("grab");
+  const [amount, setAmount] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (expanded) {
+      const timer = setTimeout(() => inputRef.current?.focus(), 50);
+      return () => clearTimeout(timer);
+    }
+  }, [expanded]);
+
+  useEffect(() => {
+    function onKey(e) {
+      if (e.key === "Escape") collapse();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  function collapse() {
+    setExpanded(false);
+    setError(null);
+    setAmount("");
+  }
+
+  async function handleSubmit() {
+    const value = parseFloat(amount);
+    if (!userId || busy) return;
+    if (!Number.isFinite(value) || value <= 0) {
+      setError(t.amountError);
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const shift = await logShift({ userId, platform, amount: value });
+      collapse();
+      onLogged?.(shift);
+    } catch (err) {
+      setError(t.networkError);
+      console.error(err);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const parsedAmount = parseFloat(amount);
+  const isValid = Number.isFinite(parsedAmount) && parsedAmount > 0;
+  const confirmLabel = isValid ? t.logAmount(parsedAmount.toFixed(2)) : t.logShift;
+
+  if (!expanded) {
+    return (
+      <div
+        className="shrink-0 px-4 pt-3 pb-2"
+        style={{ background: "#0a0a0a", borderTop: "1px solid #1a1a1a" }}
+      >
+        <button
+          onClick={() => setExpanded(true)}
+          className="w-full h-14 bg-accent text-neutral-950 font-bold text-[15px] rounded-2xl flex items-center justify-center gap-2 transition-all hover:brightness-105 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-white"
+        >
+          + {t.logShift}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="shrink-0 px-4 pt-4 pb-2"
+      style={{ background: "#111", borderTop: "1px solid #1e1e1e" }}
+    >
+      {/* Platform segmented control — 2-row grid */}
+      <div
+        className="grid grid-cols-4 gap-1 mb-3"
+        role="radiogroup"
+        aria-label="Platform"
+      >
+        {PLATFORMS.map((p) => (
+          <button
+            key={p.id}
+            role="radio"
+            aria-checked={platform === p.id}
+            onClick={() => setPlatform(p.id)}
+            className={`py-2.5 rounded-xl text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-accent ${
+              platform === p.id
+                ? "bg-accent text-neutral-950"
+                : "bg-neutral-900 text-neutral-400 hover:bg-neutral-800"
+            }`}
+          >
+            {SHORT_LABELS[p.id]}
+          </button>
+        ))}
+      </div>
+
+      {/* Amount input */}
+      <div
+        className="flex items-center rounded-2xl px-4 mb-3 transition-colors"
+        style={{
+          background: "#1a1a1a",
+          border: "1px solid #2a2a2a",
+        }}
+      >
+        <span className="text-neutral-500 font-semibold text-xl mr-2 shrink-0">RM</span>
+        <input
+          ref={inputRef}
+          type="number"
+          inputMode="decimal"
+          min="0"
+          step="0.01"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+          placeholder="0.00"
+          aria-label="Amount earned in ringgit"
+          className="w-full bg-transparent py-4 text-3xl font-bold text-white placeholder-neutral-700 outline-none"
+          style={{ fontVariantNumeric: "tabular-nums" }}
+        />
+      </div>
+
+      {error && <p className="text-xs text-red-400 mb-2">{error}</p>}
+
+      <div className="flex gap-2">
+        <button
+          onClick={collapse}
+          className="h-12 px-4 rounded-xl bg-neutral-800 text-neutral-400 text-sm font-medium hover:bg-neutral-700 transition-colors focus-visible:outline-2 focus-visible:outline-accent"
+        >
+          {t.cancel}
+        </button>
+        <button
+          onClick={handleSubmit}
+          disabled={busy || !userId || !isValid}
+          className="flex-1 h-12 rounded-xl bg-accent text-neutral-950 font-bold text-[15px] disabled:opacity-40 transition-all hover:brightness-105 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-white"
+        >
+          {busy ? t.saving : confirmLabel}
+        </button>
+      </div>
+    </div>
+  );
+}
