@@ -1,6 +1,11 @@
 import { PLATFORMS, platformColor, platformLabel, timeAgo } from "../platforms";
 import { useLang } from "../context/LanguageContext";
 
+const SHORT_LABELS = {
+  grab: "Grab", foodpanda: "Panda", lalamove: "Lala",
+  shopeefood: "Shopee", maxim: "Maxim", indrive: "inDrive", other: "Other",
+};
+
 function StackedBar({ breakdown }) {
   const total = PLATFORMS.reduce((sum, p) => sum + (breakdown[p.id] ?? 0), 0);
   if (total === 0) return null;
@@ -98,6 +103,8 @@ export default function EarningsSummary({ filteredShifts, filteredSummary, loadi
   const recent = (filteredShifts ?? []).slice(0, 20);
   const grouped = groupByDate(recent, t);
   const hasBreakdown = PLATFORMS.some((p) => (breakdown[p.id] ?? 0) > 0);
+  const isDefaultFilter = !filter || (filter.timeScope === "week" && filter.platform === "all");
+  const isEmpty = !loading && (filteredShifts ?? []).length === 0;
 
   return (
     <section className="mx-4 bg-card border border-card-edge rounded-2xl p-4">
@@ -108,10 +115,39 @@ export default function EarningsSummary({ filteredShifts, filteredSummary, loadi
       {hasBreakdown ? (
         <StackedBar breakdown={breakdown} />
       ) : (
-        <p className="text-sm text-neutral-600 py-1">{t.noShiftsYet}</p>
+        !isEmpty && <p className="text-sm text-neutral-600 py-1">{t.noShiftsYet}</p>
       )}
 
-      {recent.length > 0 && (
+      {isEmpty ? (
+        <div className="py-8 text-center">
+          <p className="text-sm text-neutral-500 mb-3">
+            {isDefaultFilter
+              ? (t.noShiftsYet ?? "No shifts logged yet.")
+              : (() => {
+                  const platLabel = filter.platform !== "all"
+                    ? (SHORT_LABELS[filter.platform] ?? filter.platform)
+                    : null;
+                  const msg = t.noShiftsFiltered
+                    ? (typeof t.noShiftsFiltered === "function"
+                        ? t.noShiftsFiltered(platLabel ?? "any")
+                        : t.noShiftsFiltered)
+                    : platLabel
+                    ? `No ${platLabel} shifts in this period.`
+                    : "No shifts in this period.";
+                  return msg;
+                })()
+            }
+          </p>
+          {!isDefaultFilter && onClearFilters && (
+            <button
+              onClick={onClearFilters}
+              className="text-sm text-accent underline underline-offset-2 hover:brightness-110 focus-visible:outline-2 focus-visible:outline-accent min-h-[44px] px-3"
+            >
+              {t.clearFilters ?? "Clear filters"}
+            </button>
+          )}
+        </div>
+      ) : recent.length > 0 && (
         <div className="mt-4">
           {Array.from(grouped.entries()).map(([dateLabel, dayShifts], groupIndex) => (
             <div key={dateLabel}>
