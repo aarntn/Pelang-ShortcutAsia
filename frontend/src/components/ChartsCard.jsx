@@ -108,8 +108,22 @@ export default function ChartsCard({ filteredShifts, filter }) {
             <LabelList
               dataKey="value"
               position="top"
-              formatter={v => (v > 0 ? `RM${v.toFixed(0)}` : "")}
-              style={{ fill: EMERALD, fontSize: 10, fontVariantNumeric: "tabular-nums" }}
+              content={({ x, y, width, value, index }) => {
+                const entry = data[index];
+                if (!value || !(entry?.isToday || entry?.isCurrentWeek)) return null;
+                return (
+                  <text
+                    x={x + width / 2}
+                    y={y - 4}
+                    fill={EMERALD}
+                    fontSize={10}
+                    textAnchor="middle"
+                    style={{ fontVariantNumeric: "tabular-nums" }}
+                  >
+                    {`RM${value.toFixed(0)}`}
+                  </text>
+                );
+              }}
             />
           </Bar>
         </BarChart>

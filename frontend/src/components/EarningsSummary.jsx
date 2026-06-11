@@ -127,12 +127,10 @@ export default function EarningsSummary({ filteredShifts, filteredSummary, loadi
                   const platLabel = filter.platform !== "all"
                     ? (SHORT_LABELS[filter.platform] ?? filter.platform)
                     : null;
-                  const msg = t.noShiftsFiltered
-                    ? (typeof t.noShiftsFiltered === "function"
-                        ? t.noShiftsFiltered(platLabel ?? "any")
-                        : t.noShiftsFiltered)
-                    : platLabel
-                    ? `No ${platLabel} shifts in this period.`
+                  const msg = platLabel
+                    ? (t.noShiftsFiltered && typeof t.noShiftsFiltered === "function"
+                        ? t.noShiftsFiltered(platLabel)
+                        : `No ${platLabel} shifts in this period.`)
                     : "No shifts in this period.";
                   return msg;
                 })()
