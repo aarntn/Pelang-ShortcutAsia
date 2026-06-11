@@ -27,9 +27,14 @@ function Toggle({ checked, onChange, label }) {
   );
 }
 
-export default function ProjectionCard({ summary }) {
+export default function ProjectionCard({ summary, filter }) {
   const { t } = useLang();
   const [showZakat, setShowZakat] = useState(false);
+
+  // Projections from partial filtered data are misleading — suppress unless default filter.
+  if (filter && (filter.timeScope !== "week" || filter.platform !== "all")) {
+    return null;
+  }
 
   const weekTotal = summary?.total_earned_this_week ?? 0;
   const shiftCount = summary?.shift_count_this_week ?? 0;

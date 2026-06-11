@@ -8,6 +8,7 @@ import ProjectionCard from "./components/ProjectionCard";
 import ComplianceCard from "./components/ComplianceCard";
 import RightsCard from "./components/RightsCard";
 import EditShiftSheet from "./components/EditShiftSheet";
+import FilterBar from "./components/FilterBar";
 import { platformLabel } from "./platforms";
 import { isoWeekLabel } from "./utils";
 
@@ -110,7 +111,17 @@ function StatusBar() {
   );
 }
 
-function HeroMetric({ summary, loading }) {
+const SHORT_LABELS = {
+  grab: "Grab",
+  foodpanda: "Panda",
+  lalamove: "Lala",
+  shopeefood: "Shopee",
+  maxim: "Maxim",
+  indrive: "inDrive",
+  other: "Other",
+};
+
+function HeroMetric({ summary, loading, filter }) {
   const { t } = useLang();
 
   if (loading) {
@@ -123,20 +134,32 @@ function HeroMetric({ summary, loading }) {
     );
   }
 
-  const thisWeek = summary?.total_earned_this_week ?? 0;
-  const socso = summary?.total_socso_this_week ?? 0;
-  const shiftCount = summary?.shift_count_this_week ?? 0;
+  const total = summary?.total_earned ?? 0;
+  const socso = summary?.total_socso ?? 0;
+  const shiftCount = summary?.shift_count ?? 0;
+
+  const scopeLabel =
+    filter?.timeScope === "month"
+      ? (t.thisMonth ?? "This month")
+      : filter?.timeScope === "all"
+      ? (t.allTime ?? "All time")
+      : (t.thisWeek ?? "This week");
+
+  const subtitle =
+    filter?.platform && filter.platform !== "all"
+      ? `${SHORT_LABELS[filter.platform] ?? filter.platform} · ${scopeLabel.toLowerCase()}`
+      : scopeLabel;
 
   return (
     <div className="px-5 pt-2 pb-4">
       <p className="text-[11px] font-medium tracking-widest uppercase text-neutral-500 mb-1.5">
-        {t.thisWeek}
+        {subtitle}
       </p>
       <p
         className="text-5xl font-extrabold text-white leading-none"
         style={{ fontVariantNumeric: "tabular-nums" }}
       >
-        RM{thisWeek.toFixed(2)}
+        RM{total.toFixed(2)}
       </p>
       <p className="text-sm text-neutral-500 mt-2 leading-snug">
         {t.socsoCredited(socso.toFixed(2))}
@@ -397,7 +420,15 @@ export default function App() {
                 <p className="text-xs text-red-400 px-5">{loadError}</p>
               )}
 
-              <HeroMetric summary={data?.summary} loading={loading || !userId} />
+              {/* Filter bar */}
+              <FilterBar filter={filter} onChange={setFilter} />
+
+              {/* Hero metric */}
+              <HeroMetric
+                summary={filteredSummary}
+                loading={loading || !userId}
+                filter={filter}
+              />
               <EarningsSummary
                 filteredShifts={filteredShifts}
                 filteredSummary={filteredSummary}
@@ -406,7 +437,11 @@ export default function App() {
                 onClearFilters={handleClearFilters}
                 filter={filter}
               />
-              <ProjectionCard summary={data?.summary} />
+              <ProjectionCard
+                summary={data?.summary}
+                loading={loading || !userId}
+                filter={filter}
+              />
               <ComplianceCard summary={data?.summary} />
               <RightsCard />
 
