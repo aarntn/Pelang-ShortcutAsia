@@ -59,6 +59,13 @@ const en = {
   shiftDeleted: "Shift deleted",
   undoLabel: "Undo",
 
+  // Filters
+  thisMonth: "This month",
+  allTime: "All time",
+  filterAll: "All",
+  noShiftsFiltered: (platform) => `No ${platform} shifts in this period.`,
+  clearFilters: "Clear filters",
+
   // Rights card
   rightsCardSummary: "Know Your Rights · Act 872",
   rights: [
@@ -152,6 +159,13 @@ const bm = {
   deleteShift: "Padam syif",
   shiftDeleted: "Syif dipadam",
   undoLabel: "Batal",
+
+  // Filters
+  thisMonth: "Bulan ini",
+  allTime: "Semua masa",
+  filterAll: "Semua",
+  noShiftsFiltered: (platform) => `Tiada syif ${platform} dalam tempoh ini.`,
+  clearFilters: "Padam penapis",
 
   // Rights card
   rightsCardSummary: "Hak Anda · Akta 872",
