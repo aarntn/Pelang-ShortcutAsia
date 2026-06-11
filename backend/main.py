@@ -3,6 +3,8 @@
 Routes:
     GET  /ping                health check
     POST /shifts              log a shift (SOCSO auto-calculated)
+    PATCH  /shifts/{shift_id} update amount/platform (ownership-checked)
+    DELETE /shifts/{shift_id} delete a shift (ownership-checked)
     GET  /shifts/{user_id}    all shifts + aggregated summary
 """
 import os
@@ -15,8 +17,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from firebase_client import get_db
 from models import (
     SOCSO_RATE,
+    DeleteResponse,
     Shift,
     ShiftCreate,
+    ShiftUpdate,
     ShiftsResponse,
     ShiftSummary,
 )
@@ -36,7 +40,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE"],
     allow_headers=["*"],
 )
 
@@ -79,6 +83,40 @@ def create_shift(payload: ShiftCreate):
         })
 
     return Shift(id=ref.id, **doc)
+
+
+@app.patch("/shifts/{shift_id}", response_model=Shift)
+def update_shift(shift_id: str, payload: ShiftUpdate):
+    db = get_db()
+    ref = db.collection("shifts").document(shift_id)
+    snap = ref.get()
+    # Never 403 — always 404 to avoid leaking document existence.
+    if not snap.exists or snap.to_dict()["user_id"] != payload.user_id:
+        raise HTTPException(status_code=404, detail="Shift not found")
+
+    updates: dict = {}
+    if payload.amount is not None:
+        updates["amount"] = payload.amount
+        updates["socso_deducted"] = round(payload.amount * SOCSO_RATE, 2)
+    if payload.platform is not None:
+        updates["platform"] = payload.platform.value
+    # logged_at and week_label are immutable — never updated.
+    if updates:
+        ref.update(updates)
+
+    updated = ref.get().to_dict()
+    return Shift(id=shift_id, **updated)
+
+
+@app.delete("/shifts/{shift_id}", response_model=DeleteResponse)
+def delete_shift(shift_id: str, user_id: str):
+    db = get_db()
+    ref = db.collection("shifts").document(shift_id)
+    snap = ref.get()
+    if not snap.exists or snap.to_dict()["user_id"] != user_id:
+        raise HTTPException(status_code=404, detail="Shift not found")
+    ref.delete()
+    return DeleteResponse(deleted=shift_id)
 
 
 @app.get("/shifts/{user_id}", response_model=ShiftsResponse)
