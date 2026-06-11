@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLang } from "../context/LanguageContext";
+import Sheet from "./Sheet";
 
 const ICONS = {
   shield: (
@@ -70,48 +71,29 @@ function StatusRow({ icon, label, subtext, status, onClick }) {
 
 function EpfSheet({ onClose }) {
   const { t } = useLang();
-
-  useEffect(() => {
-    const onKey = (e) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-label="i-Saraan Plus details"
-    >
-      <div
-        className="w-full max-w-[420px] bg-card border-t border-card-edge rounded-t-2xl p-6 pb-8"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="w-10 h-1 bg-neutral-700 rounded-full mx-auto mb-5" />
-        <h3 className="text-lg font-bold text-white mb-3">{t.epfSheetTitle}</h3>
-        <div className="space-y-3 mb-6">
-          {t.epfSheetBody.split("\n\n").map((para, i) => (
-            <p key={i} className="text-sm text-neutral-400 leading-relaxed">{para}</p>
-          ))}
-        </div>
-        <a
-          href="https://www.kwsp.gov.my"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block w-full text-center bg-accent text-neutral-950 font-bold rounded-2xl py-3.5 hover:brightness-110 transition"
-        >
-          {t.registerKWSP}
-        </a>
-        <button
-          onClick={onClose}
-          className="block w-full text-center text-sm text-neutral-500 mt-3 py-2 hover:text-neutral-300"
-        >
-          {t.dismiss}
-        </button>
+    <Sheet onClose={onClose} label="i-Saraan Plus details">
+      <h3 className="text-lg font-bold text-white mb-3">{t.epfSheetTitle}</h3>
+      <div className="space-y-3 mb-6">
+        {t.epfSheetBody.split("\n\n").map((para, i) => (
+          <p key={i} className="text-sm text-neutral-400 leading-relaxed">{para}</p>
+        ))}
       </div>
-    </div>
+      <a
+        href="https://www.kwsp.gov.my"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block w-full text-center bg-accent text-neutral-950 font-bold rounded-2xl py-3.5 hover:brightness-110 transition"
+      >
+        {t.registerKWSP}
+      </a>
+      <button
+        onClick={onClose}
+        className="block w-full text-center text-sm text-neutral-500 mt-3 py-2 hover:text-neutral-300"
+      >
+        {t.dismiss}
+      </button>
+    </Sheet>
   );
 }
 
