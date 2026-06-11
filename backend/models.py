@@ -12,6 +12,9 @@ class Platform(str, Enum):
     GRAB = "grab"
     FOODPANDA = "foodpanda"
     LALAMOVE = "lalamove"
+    SHOPEEFOOD = "shopeefood"
+    MAXIM = "maxim"
+    INDRIVE = "indrive"
     OTHER = "other"
 
 
@@ -36,6 +39,22 @@ class Shift(BaseModel):
     socso_deducted: float
     logged_at: datetime
     week_label: str  # ISO week, e.g. "2026-W24"
+
+
+class ShiftUpdate(BaseModel):
+    """Payload for PATCH /shifts/{shift_id}."""
+    user_id: str = Field(..., min_length=1)
+    platform: Optional[Platform] = None
+    amount: Optional[float] = Field(None, gt=0, le=10_000)
+
+    @field_validator("amount")
+    @classmethod
+    def round_to_sen(cls, v: float) -> float:
+        return round(v, 2) if v is not None else v
+
+
+class DeleteResponse(BaseModel):
+    deleted: str
 
 
 class ShiftSummary(BaseModel):
