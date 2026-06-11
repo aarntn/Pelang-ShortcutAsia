@@ -9,6 +9,7 @@ import ComplianceCard from "./components/ComplianceCard";
 import RightsCard from "./components/RightsCard";
 import EditShiftSheet from "./components/EditShiftSheet";
 import { platformLabel } from "./platforms";
+import { isoWeekLabel } from "./utils";
 
 function SignalIcon() {
   return (
@@ -207,12 +208,47 @@ export default function App() {
   const [pendingDelete, setPendingDelete] = useState(null);
   const pendingDeleteRef = useRef(null);
   const deleteTimer = useRef(null);
+  const [filter, setFilter] = useState({ timeScope: "week", platform: "all" });
 
   const allShifts = data?.shifts ?? [];
+
   const visibleShifts = useMemo(
     () => (pendingDelete ? allShifts.filter((s) => s.id !== pendingDelete.id) : allShifts),
     [allShifts, pendingDelete]
   );
+
+  const filteredShifts = useMemo(() => {
+    let result = visibleShifts;
+    if (filter.platform !== "all") {
+      result = result.filter((s) => s.platform === filter.platform);
+    }
+    const now = new Date();
+    if (filter.timeScope === "week") {
+      const currentWeek = isoWeekLabel(now);
+      result = result.filter((s) => s.week_label === currentWeek);
+    } else if (filter.timeScope === "month") {
+      const ym = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
+      result = result.filter((s) => new Date(s.logged_at).toISOString().slice(0, 7) === ym);
+    }
+    return result;
+  }, [visibleShifts, filter]);
+
+  const filteredSummary = useMemo(() => {
+    const total = filteredShifts.reduce((s, r) => s + r.amount, 0);
+    const socso = filteredShifts.reduce((s, r) => s + r.socso_deducted, 0);
+    const breakdown = {};
+    for (const s of filteredShifts) {
+      breakdown[s.platform] = (breakdown[s.platform] ?? 0) + s.amount;
+    }
+    return {
+      total_earned: Math.round(total * 100) / 100,
+      total_socso: Math.round(socso * 100) / 100,
+      shift_count: filteredShifts.length,
+      breakdown_by_platform: Object.fromEntries(
+        Object.entries(breakdown).map(([k, v]) => [k, Math.round(v * 100) / 100])
+      ),
+    };
+  }, [filteredShifts]);
 
   const refresh = useCallback(async () => {
     if (!userId) return;
@@ -271,6 +307,10 @@ export default function App() {
     clearTimeout(deleteTimer.current);
     setPendingDelete(null);
     setToast(null);
+  }
+
+  function handleClearFilters() {
+    setFilter({ timeScope: "week", platform: "all" });
   }
 
   return (
@@ -359,10 +399,12 @@ export default function App() {
 
               <HeroMetric summary={data?.summary} loading={loading || !userId} />
               <EarningsSummary
-                filteredShifts={visibleShifts}
-                filteredSummary={data?.summary}
+                filteredShifts={filteredShifts}
+                filteredSummary={filteredSummary}
                 loading={loading || !userId}
                 onEdit={setEditingShift}
+                onClearFilters={handleClearFilters}
+                filter={filter}
               />
               <ProjectionCard summary={data?.summary} />
               <ComplianceCard summary={data?.summary} />
