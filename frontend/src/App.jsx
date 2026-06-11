@@ -9,6 +9,7 @@ import ComplianceCard from "./components/ComplianceCard";
 import RightsCard from "./components/RightsCard";
 import EditShiftSheet from "./components/EditShiftSheet";
 import FilterBar from "./components/FilterBar";
+import ChartsCard from "./components/ChartsCard";
 import { platformLabel } from "./platforms";
 import { isoWeekLabel } from "./utils";
 
@@ -429,6 +430,8 @@ export default function App() {
                 loading={loading || !userId}
                 filter={filter}
               />
+              {/* Charts */}
+              <ChartsCard filteredShifts={filteredShifts} filter={filter} />
               <EarningsSummary
                 filteredShifts={filteredShifts}
                 filteredSummary={filteredSummary}
