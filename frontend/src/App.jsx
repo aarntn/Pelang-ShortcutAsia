@@ -1,12 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "./context/AuthContext";
 import { useLang } from "./context/LanguageContext";
-import { fetchShifts } from "./api";
+import { fetchShifts, deleteShift } from "./api";
 import ShiftLogger from "./components/ShiftLogger";
 import EarningsSummary from "./components/EarningsSummary";
 import ProjectionCard from "./components/ProjectionCard";
 import ComplianceCard from "./components/ComplianceCard";
 import RightsCard from "./components/RightsCard";
+import EditShiftSheet from "./components/EditShiftSheet";
 import { platformLabel } from "./platforms";
 
 function SignalIcon() {
@@ -144,8 +145,40 @@ function HeroMetric({ summary, loading }) {
   );
 }
 
-function Toast({ data }) {
+function Toast({ data, onUndo }) {
   const { t } = useLang();
+
+  if (data.type === "undo") {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        className="animate-toast-in absolute top-[60px] left-4 right-4 z-50 bg-card border border-card-edge rounded-2xl px-4 py-3 shadow-2xl flex items-center justify-between gap-3"
+      >
+        <p className="text-sm font-bold text-white">{t.shiftDeleted}</p>
+        <button
+          onClick={onUndo}
+          className="text-sm font-bold text-accent shrink-0 focus-visible:outline-2 focus-visible:outline-accent rounded"
+        >
+          {t.undoLabel}
+        </button>
+      </div>
+    );
+  }
+
+  if (data.type === "error") {
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        className="animate-toast-in absolute top-[60px] left-4 right-4 z-50 bg-red-950 border border-red-800 rounded-2xl px-4 py-3 shadow-2xl"
+      >
+        <p className="text-sm text-red-300">{data.message}</p>
+      </div>
+    );
+  }
+
+  // type === "shift" — newly logged shift confirmation
   return (
     <div
       role="status"
@@ -153,10 +186,10 @@ function Toast({ data }) {
       className="animate-toast-in absolute top-[60px] left-4 right-4 z-50 bg-card border border-card-edge rounded-2xl px-4 py-3 shadow-2xl"
     >
       <p className="text-sm font-bold text-white">
-        RM{data.amount.toFixed(2)} — {platformLabel(data.platform)}
+        RM{data.shift.amount.toFixed(2)} — {platformLabel(data.shift.platform)}
       </p>
       <p className="text-xs text-neutral-400 mt-0.5">
-        SOCSO: RM{data.socso_deducted.toFixed(2)} · {t.protectedStatus}
+        SOCSO: RM{data.shift.socso_deducted.toFixed(2)} · {t.protectedStatus}
       </p>
     </div>
   );
@@ -170,6 +203,16 @@ export default function App() {
   const [loadError, setLoadError] = useState(null);
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
+  const [editingShift, setEditingShift] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const pendingDeleteRef = useRef(null);
+  const deleteTimer = useRef(null);
+
+  const allShifts = data?.shifts ?? [];
+  const visibleShifts = useMemo(
+    () => (pendingDelete ? allShifts.filter((s) => s.id !== pendingDelete.id) : allShifts),
+    [allShifts, pendingDelete]
+  );
 
   const refresh = useCallback(async () => {
     if (!userId) return;
@@ -189,13 +232,45 @@ export default function App() {
     refresh();
   }, [refresh]);
 
-  useEffect(() => () => clearTimeout(toastTimer.current), []);
+  useEffect(() => () => {
+    clearTimeout(toastTimer.current);
+    clearTimeout(deleteTimer.current);
+  }, []);
 
   function handleLogged(shift) {
     refresh();
-    setToast(shift);
     clearTimeout(toastTimer.current);
+    setToast({ type: "shift", shift });
     toastTimer.current = setTimeout(() => setToast(null), 4000);
+  }
+
+  function handleDelete(shift) {
+    // Optimistically remove shift; delay the actual DELETE for 5s to allow undo.
+    pendingDeleteRef.current = shift;
+    setPendingDelete(shift);
+    clearTimeout(toastTimer.current);
+    clearTimeout(deleteTimer.current);
+    setToast({ type: "undo", shift });
+    deleteTimer.current = setTimeout(async () => {
+      const toDelete = pendingDeleteRef.current;
+      if (!toDelete) return; // undo was called
+      pendingDeleteRef.current = null;
+      setPendingDelete(null);
+      setToast(null);
+      try {
+        await deleteShift({ shiftId: toDelete.id, userId });
+        refresh();
+      } catch {
+        setToast({ type: "error", message: t.networkError });
+      }
+    }, 5000);
+  }
+
+  function handleUndo() {
+    pendingDeleteRef.current = null;
+    clearTimeout(deleteTimer.current);
+    setPendingDelete(null);
+    setToast(null);
   }
 
   return (
@@ -255,7 +330,7 @@ export default function App() {
 
           {/* Scrollable content */}
           <div className="flex-1 overflow-y-auto phone-scroll relative">
-            {toast && <Toast data={toast} />}
+            {toast && <Toast data={toast} onUndo={handleUndo} />}
 
             <div className="space-y-3">
               {/* Header */}
@@ -283,7 +358,12 @@ export default function App() {
               )}
 
               <HeroMetric summary={data?.summary} loading={loading || !userId} />
-              <EarningsSummary data={data} loading={loading || !userId} />
+              <EarningsSummary
+                filteredShifts={visibleShifts}
+                filteredSummary={data?.summary}
+                loading={loading || !userId}
+                onEdit={setEditingShift}
+              />
               <ProjectionCard summary={data?.summary} />
               <ComplianceCard summary={data?.summary} />
               <RightsCard />
@@ -299,6 +379,16 @@ export default function App() {
           </div>
 
           <ShiftLogger userId={userId} onLogged={handleLogged} />
+
+          {editingShift && (
+            <EditShiftSheet
+              shift={editingShift}
+              userId={userId}
+              onClose={() => setEditingShift(null)}
+              onSaved={refresh}
+              onDelete={handleDelete}
+            />
+          )}
 
           {/* Home indicator */}
           <div
