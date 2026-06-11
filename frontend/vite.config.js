@@ -9,6 +9,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           firebase: ["firebase/app", "firebase/auth"],
+          charts: ["recharts"],
         },
       },
     },
