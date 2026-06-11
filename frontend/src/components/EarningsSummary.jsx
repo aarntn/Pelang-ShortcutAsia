@@ -89,15 +89,13 @@ function LoadingSkeleton() {
   );
 }
 
-export default function EarningsSummary({ data, loading }) {
+export default function EarningsSummary({ filteredShifts, filteredSummary, loading, onEdit, onClearFilters, filter }) {
   const { t } = useLang();
 
   if (loading) return <LoadingSkeleton />;
 
-  const summary = data?.summary;
-  const shifts = data?.shifts ?? [];
-  const breakdown = summary?.breakdown_by_platform ?? {};
-  const recent = shifts.slice(0, 12);
+  const breakdown = filteredSummary?.breakdown_by_platform ?? {};
+  const recent = (filteredShifts ?? []).slice(0, 20);
   const grouped = groupByDate(recent, t);
   const hasBreakdown = PLATFORMS.some((p) => (breakdown[p.id] ?? 0) > 0);
 
@@ -124,25 +122,39 @@ export default function EarningsSummary({ data, loading }) {
               >
                 {dateLabel}
               </p>
-              <ul className="divide-y divide-neutral-800/50">
+              <ul className="space-y-0.5">
                 {dayShifts.map((s) => (
-                  <li key={s.id} className="flex items-center gap-2.5 py-2.5">
-                    <div
-                      className="w-1.5 h-1.5 rounded-full shrink-0"
-                      style={{ backgroundColor: platformColor(s.platform) }}
-                    />
-                    <span className="flex-1 text-sm text-neutral-400">
-                      {platformLabel(s.platform)}
-                    </span>
-                    <span
-                      className="text-sm font-bold text-white"
-                      style={{ fontVariantNumeric: "tabular-nums" }}
+                  <li key={s.id}>
+                    <button
+                      onClick={() => onEdit(s)}
+                      className="w-full flex items-center gap-2.5 py-2.5 min-h-[44px] text-left rounded-lg px-1 hover:bg-neutral-800/30 transition-colors focus-visible:outline-2 focus-visible:outline-accent"
                     >
-                      RM{s.amount.toFixed(2)}
-                    </span>
-                    <span className="text-xs text-neutral-600 w-14 text-right shrink-0">
-                      {timeAgo(s.logged_at)}
-                    </span>
+                      <div
+                        className="w-1.5 h-1.5 rounded-full shrink-0"
+                        style={{ backgroundColor: platformColor(s.platform) }}
+                      />
+                      <span className="flex-1 text-sm text-neutral-400">
+                        {platformLabel(s.platform)}
+                      </span>
+                      <span
+                        className="text-sm font-bold text-white"
+                        style={{ fontVariantNumeric: "tabular-nums" }}
+                      >
+                        RM{s.amount.toFixed(2)}
+                      </span>
+                      <span className="text-xs text-neutral-600 w-14 text-right shrink-0">
+                        {timeAgo(s.logged_at)}
+                      </span>
+                      <svg
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        className="w-3.5 h-3.5 text-neutral-700 shrink-0"
+                      >
+                        <path d="M11.5 2.5l2 2-8 8H3.5v-2l8-8z" strokeLinejoin="round" />
+                      </svg>
+                    </button>
                   </li>
                 ))}
               </ul>
