@@ -60,6 +60,12 @@ def ping():
 def create_shift(payload: ShiftCreate):
     db = get_db()
     now = datetime.now(timezone.utc)
+    if payload.logged_date is not None:
+        # Noon UTC keeps the timestamp stable within the chosen day.
+        logged_at = datetime(payload.logged_date.year, payload.logged_date.month,
+                             payload.logged_date.day, 12, 0, tzinfo=timezone.utc)
+    else:
+        logged_at = now
 
     socso = round(payload.amount * SOCSO_RATE, 2)
     doc = {
@@ -67,8 +73,8 @@ def create_shift(payload: ShiftCreate):
         "platform": payload.platform.value,
         "amount": payload.amount,
         "socso_deducted": socso,
-        "logged_at": now,
-        "week_label": iso_week_label(now),
+        "logged_at": logged_at,
+        "week_label": iso_week_label(logged_at),
     }
     ref = db.collection("shifts").document()
     ref.set(doc)
@@ -108,7 +114,13 @@ def update_shift(shift_id: str, payload: ShiftUpdate):
         updates["socso_deducted"] = round(payload.amount * SOCSO_RATE, 2)
     if payload.platform is not None:
         updates["platform"] = payload.platform.value
-    # logged_at and week_label are immutable — never updated.
+    # logged_at/week_label were immutable until backdating existed; date
+    # correction is now a first-class edit (see DOCUMENTATION.md).
+    if payload.logged_date is not None:
+        logged_at = datetime(payload.logged_date.year, payload.logged_date.month,
+                             payload.logged_date.day, 12, 0, tzinfo=timezone.utc)
+        updates["logged_at"] = logged_at
+        updates["week_label"] = iso_week_label(logged_at)
     if updates:
         ref.update(updates)
 

@@ -24,6 +24,10 @@ The build was scoped as a solo 4-day sprint with strict scope discipline: two co
 
 **Edge cases handled:** amounts validated to `0 < amount ≤ 10,000` and rounded to sen; empty `user_id` rejected with 400; failed saves surface a retryable error message rather than silently dropping the shift; the amount input is `inputMode="decimal"` so phone keyboards open with a number pad.
 
+### Backdating and the logged_at immutability reversal
+
+The first CRUD iteration made `logged_at` and `week_label` immutable on edit: the log moment was a fact, and SOCSO weekly coverage derives from `week_label`, so letting clients rewrite history looked like an integrity risk. That was the right call **until backdated logging existed**. Once the shift date is user-supplied at creation ("I rode all day Tuesday and remembered to log it Thursday night"), "I logged it on the wrong day" becomes a legitimate correction, so `PATCH /shifts/{id}` now accepts `logged_date` and recomputes both fields server-side. Bounds are enforced on the server (not future, ≤365 days back), and `week_label` is always derived from `logged_at` — never client-supplied — so weekly Protection Status stays consistent.
+
 ## 4. Feature 2 technical decisions — compliance status card
 
 **Why frontend-only.** All three status rows are pure functions of data the dashboard has already fetched. SOCSO status is `shift_count_this_week > 0`; the EPF and EIS rows are static policy explainers. Adding endpoints would mean an extra network round-trip to compute booleans the client can derive instantly — and the card must update the moment a shift is logged, which a local derivation gives for free.
