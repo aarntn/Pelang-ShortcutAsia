@@ -8,8 +8,9 @@ const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const EMERALD = "#10b981";
 const MUTED = "#404040";
 
-function buildDailyData(shifts) {
-  // Mon=0 … Sun=6 in our display order
+function buildDailyData(shifts, anchor, isCurrentPeriod) {
+  // Bars are the anchored week's Mon–Sun; shifts are already range-filtered
+  // to that week by App, so grouping by UTC weekday is sufficient.
   const totals = Array(7).fill(0);
   for (const s of shifts) {
     const d = new Date(s.logged_at);
@@ -24,7 +25,8 @@ function buildDailyData(shifts) {
   return DAY_LABELS.map((label, i) => ({
     label,
     value: Math.round(totals[i] * 100) / 100,
-    isToday: i === todayIdx,
+    // "Today" only exists in the current week — suppress on past weeks.
+    isToday: isCurrentPeriod && i === todayIdx,
   }));
 }
 
@@ -63,12 +65,12 @@ function CustomTooltip({ active, payload, label }) {
   );
 }
 
-export default function ChartsCard({ filteredShifts, filter }) {
+export default function ChartsCard({ filteredShifts, filter, anchor, isCurrentPeriod }) {
   const timeScope = filter?.timeScope ?? "week";
   const isWeek = timeScope === "week";
 
   const data = isWeek
-    ? buildDailyData(filteredShifts ?? [])
+    ? buildDailyData(filteredShifts ?? [], anchor, isCurrentPeriod)
     : buildWeeklyData(filteredShifts ?? [], timeScope);
 
   // Dynamic aria-label
@@ -76,9 +78,10 @@ export default function ChartsCard({ filteredShifts, filter }) {
   if (isWeek) {
     const max = Math.max(...data.map(d => d.value));
     const maxItem = data.find(d => d.value === max);
+    const base = isCurrentPeriod ? "Daily earnings this week" : "Daily earnings for selected week";
     ariaLabel = max > 0 && maxItem
-      ? `Daily earnings this week, highest ${maxItem.label} RM${max.toFixed(2)}`
-      : "Daily earnings this week";
+      ? `${base}, highest ${maxItem.label} RM${max.toFixed(2)}`
+      : base;
   } else if (timeScope === "month") {
     ariaLabel = "Weekly earnings this month";
   }

@@ -124,8 +124,9 @@ const SHORT_LABELS = {
   other: "Other",
 };
 
-function HeroMetric({ summary, loading, filter }) {
-  const { t } = useLang();
+function HeroMetric({ summary, loading, filter, anchor, isCurrentPeriod }) {
+  const { t, lang } = useLang();
+  const locale = lang === "bm" ? "ms-MY" : "en-MY";
 
   if (loading) {
     return (
@@ -141,16 +142,40 @@ function HeroMetric({ summary, loading, filter }) {
   const socso = summary?.total_socso ?? 0;
   const shiftCount = summary?.shift_count ?? 0;
 
-  const scopeLabel =
-    filter?.timeScope === "month"
+  // Honest labels: past periods show the actual date range, not "This week/month".
+  let scopeLabel;
+  if (filter?.timeScope === "month") {
+    scopeLabel = isCurrentPeriod
       ? (t.thisMonth ?? "This month")
-      : filter?.timeScope === "all"
-      ? (t.allTime ?? "All time")
-      : (t.thisWeek ?? "This week");
+      : anchor.toLocaleDateString(locale, { month: "long", year: "numeric", timeZone: "UTC" });
+  } else if (filter?.timeScope === "all") {
+    scopeLabel = t.allTime ?? "All time";
+  } else if (isCurrentPeriod) {
+    scopeLabel = t.thisWeek ?? "This week";
+  } else {
+    const start = mondayOf(anchor);
+    const end = addDays(start, 6);
+    const sameMonth = start.getUTCMonth() === end.getUTCMonth();
+    const startStr = start.toLocaleDateString(locale, {
+      day: "numeric",
+      month: sameMonth ? undefined : "short",
+      timeZone: "UTC",
+    });
+    const endStr = end.toLocaleDateString(locale, {
+      day: "numeric",
+      month: "short",
+      timeZone: "UTC",
+    });
+    scopeLabel = (t.weekOf ?? ((r) => `Week of ${r}`))(`${startStr}–${endStr}`);
+  }
+
+  // Lowercase only word labels ("this week", "all time") — date strings stay as-is.
+  const lowered =
+    isCurrentPeriod || filter?.timeScope === "all" ? scopeLabel.toLowerCase() : scopeLabel;
 
   const subtitle =
     filter?.platform && filter.platform !== "all"
-      ? `${SHORT_LABELS[filter.platform] ?? filter.platform} · ${scopeLabel.toLowerCase()}`
+      ? `${SHORT_LABELS[filter.platform] ?? filter.platform} · ${lowered}`
       : scopeLabel;
 
   return (

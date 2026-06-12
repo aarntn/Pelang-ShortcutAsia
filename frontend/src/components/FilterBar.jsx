@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { PLATFORMS } from "../platforms";
 import { useLang } from "../context/LanguageContext";
+import { mondayOf, addDays, addMonths } from "../utils";
 
 const SHORT_LABELS = {
   grab: "Grab",
@@ -68,10 +69,41 @@ function RadioGroup({ label, options, value, onChange, focusIdx, setFocusIdx, bt
   );
 }
 
+function periodLabelFor(anchor, timeScope, lang) {
+  const locale = lang === "bm" ? "ms-MY" : "en-MY";
+  if (timeScope === "month") {
+    return anchor.toLocaleDateString(locale, { month: "long", year: "numeric", timeZone: "UTC" });
+  }
+  const start = mondayOf(anchor);
+  const end = addDays(start, 6);
+  const sameMonth = start.getUTCMonth() === end.getUTCMonth();
+  const startStr = start.toLocaleDateString(locale, {
+    day: "numeric",
+    month: sameMonth ? undefined : "short",
+    timeZone: "UTC",
+  });
+  const endStr = end.toLocaleDateString(locale, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+  return `${startStr}–${endStr}`;
+}
+
 // filter = { timeScope: "week"|"month"|"all", platform: "all"|platformId }
 // onChange = (newFilter) => void
-export default function FilterBar({ filter, onChange }) {
-  const { t } = useLang();
+export default function FilterBar({ filter, onChange, anchor, onAnchorChange, isCurrentPeriod }) {
+  const { t, lang } = useLang();
+
+  function goBack() {
+    onAnchorChange(filter.timeScope === "week" ? addDays(anchor, -7) : addMonths(anchor, -1));
+  }
+
+  function goForward() {
+    if (isCurrentPeriod) return;
+    onAnchorChange(filter.timeScope === "week" ? addDays(anchor, 7) : addMonths(anchor, 1));
+  }
 
   // Fallback strings until Task 16 adds them to i18n.js
   const thisWeek = t.thisWeek ?? "This week";
@@ -116,6 +148,61 @@ export default function FilterBar({ filter, onChange }) {
         btnRefs={timeBtnRefs}
         className="grid grid-cols-3 gap-1"
       />
+      {/* Period navigator — hidden for "all time" (nothing to page through) */}
+      {filter.timeScope !== "all" && (
+        <div className="flex items-center justify-center gap-1 mt-2">
+          <button
+            type="button"
+            onClick={goBack}
+            aria-label="Previous period"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors focus-visible:outline-2 focus-visible:outline-accent"
+          >
+            <svg
+              viewBox="0 0 16 16"
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M10 12L6 8l4-4" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            onClick={() => !isCurrentPeriod && onAnchorChange(new Date())}
+            className={`min-h-[44px] px-3 text-sm font-semibold rounded-xl transition-colors focus-visible:outline-2 focus-visible:outline-accent ${
+              isCurrentPeriod ? "text-white cursor-default" : "text-neutral-300 hover:bg-neutral-800"
+            }`}
+            aria-label={isCurrentPeriod ? undefined : "Back to current period"}
+            style={{ fontVariantNumeric: "tabular-nums" }}
+          >
+            {periodLabelFor(anchor, filter.timeScope, lang)}
+          </button>
+          <button
+            type="button"
+            onClick={goForward}
+            disabled={isCurrentPeriod}
+            aria-label="Next period"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-neutral-400 focus-visible:outline-2 focus-visible:outline-accent"
+          >
+            <svg
+              viewBox="0 0 16 16"
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M6 4l4 4-4 4" />
+            </svg>
+          </button>
+        </div>
+      )}
       {/* Row 2 — platform chips */}
       <div className="overflow-x-auto mt-2" style={{ scrollbarWidth: "none" }}>
         <RadioGroup
