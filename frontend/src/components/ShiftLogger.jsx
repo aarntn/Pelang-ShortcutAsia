@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { logShift } from "../api";
 import { PLATFORMS } from "../platforms";
 import { useLang } from "../context/LanguageContext";
+import { useSettings } from "../context/SettingsContext";
+import Sheet from "./Sheet";
 
 const SHORT_LABELS = {
   grab:       "Grab",
@@ -13,34 +15,34 @@ const SHORT_LABELS = {
   other:      "Other",
 };
 
-export default function ShiftLogger({ userId, onLogged }) {
+export default function ShiftLogger({ userId, onLogged, open, onClose }) {
   const { t } = useLang();
-  const [expanded, setExpanded] = useState(false);
-  const [platform, setPlatform] = useState("grab");
+  const { defaultPlatform } = useSettings();
+  const [platform, setPlatform] = useState(defaultPlatform);
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const inputRef = useRef(null);
 
   useEffect(() => {
-    if (expanded) {
+    if (open) {
+      setPlatform(defaultPlatform);
+      setAmount("");
+      setError(null);
+    }
+  }, [open, defaultPlatform]);
+
+  useEffect(() => {
+    if (open) {
       const timer = setTimeout(() => inputRef.current?.focus(), 50);
       return () => clearTimeout(timer);
     }
-  }, [expanded]);
+  }, [open]);
 
-  useEffect(() => {
-    function onKey(e) {
-      if (e.key === "Escape") collapse();
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-
-  function collapse() {
-    setExpanded(false);
+  function handleClose() {
     setError(null);
     setAmount("");
+    onClose?.();
   }
 
   async function handleSubmit() {
@@ -54,8 +56,8 @@ export default function ShiftLogger({ userId, onLogged }) {
     setError(null);
     try {
       const shift = await logShift({ userId, platform, amount: value });
-      collapse();
       onLogged?.(shift);
+      handleClose();
     } catch (err) {
       setError(t.networkError);
       console.error(err);
@@ -68,27 +70,10 @@ export default function ShiftLogger({ userId, onLogged }) {
   const isValid = Number.isFinite(parsedAmount) && parsedAmount > 0;
   const confirmLabel = isValid ? t.logAmount(parsedAmount.toFixed(2)) : t.logShift;
 
-  if (!expanded) {
-    return (
-      <div
-        className="shrink-0 px-4 pt-3 pb-2"
-        style={{ background: "#0a0a0a", borderTop: "1px solid #1a1a1a" }}
-      >
-        <button
-          onClick={() => setExpanded(true)}
-          className="w-full h-14 bg-accent text-neutral-950 font-bold text-[15px] rounded-2xl flex items-center justify-center gap-2 transition-all hover:brightness-105 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-white"
-        >
-          + {t.logShift}
-        </button>
-      </div>
-    );
-  }
+  if (!open) return null;
 
   return (
-    <div
-      className="shrink-0 px-4 pt-4 pb-2"
-      style={{ background: "#111", borderTop: "1px solid #1e1e1e" }}
-    >
+    <Sheet onClose={handleClose} label={t.logShift}>
       {/* Platform segmented control — 2-row grid */}
       <div
         className="grid grid-cols-4 gap-1 mb-3"
@@ -141,7 +126,7 @@ export default function ShiftLogger({ userId, onLogged }) {
 
       <div className="flex gap-2">
         <button
-          onClick={collapse}
+          onClick={handleClose}
           className="h-12 px-4 rounded-xl bg-neutral-800 text-neutral-400 text-sm font-medium hover:bg-neutral-700 transition-colors focus-visible:outline-2 focus-visible:outline-accent"
         >
           {t.cancel}
@@ -154,6 +139,6 @@ export default function ShiftLogger({ userId, onLogged }) {
           {busy ? t.saving : confirmLabel}
         </button>
       </div>
-    </div>
+    </Sheet>
   );
 }
