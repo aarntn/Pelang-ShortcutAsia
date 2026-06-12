@@ -45,9 +45,17 @@ function Toggle({ checked, onChange, label }) {
 
 export default function SettingsSheet({ onClose }) {
   const { t, lang, toggleLang } = useLang();
-  const { defaultPlatform, showZakat, setDefaultPlatform, setShowZakat, clearData } =
-    useSettings();
+  const {
+    defaultPlatform,
+    showZakat,
+    weeklyGoal,
+    setDefaultPlatform,
+    setShowZakat,
+    setWeeklyGoal,
+    clearData,
+  } = useSettings();
 
+  const [goalDraft, setGoalDraft] = useState(weeklyGoal > 0 ? String(weeklyGoal) : "");
   const [armed, setArmed] = useState(false);
   const armTimer = useRef(null);
 
@@ -61,6 +69,16 @@ export default function SettingsSheet({ onClose }) {
     }
     clearTimeout(armTimer.current);
     clearData();
+  }
+
+  function commitGoal() {
+    const v = parseFloat(goalDraft);
+    if (Number.isFinite(v) && v > 0) {
+      setWeeklyGoal(Math.round(v * 100) / 100);
+    } else {
+      setWeeklyGoal(0);
+      setGoalDraft("");
+    }
   }
 
   const langLabel = t.settingsLanguage ?? "Language";
@@ -114,6 +132,35 @@ export default function SettingsSheet({ onClose }) {
               </button>
             ))}
           </div>
+        </section>
+
+        {/* Weekly goal */}
+        <section>
+          <SectionLabel>{t.settingsWeeklyGoal ?? "Weekly goal"}</SectionLabel>
+          <div
+            className="flex items-center rounded-xl px-3"
+            style={{ background: "#1a1a1a", border: "1px solid #2a2a2a" }}
+          >
+            <span className="text-neutral-500 font-semibold text-sm mr-2 shrink-0">RM</span>
+            <input
+              type="number"
+              inputMode="decimal"
+              min="0"
+              step="10"
+              value={goalDraft}
+              onChange={(e) => setGoalDraft(e.target.value)}
+              onBlur={commitGoal}
+              onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+              placeholder="0"
+              aria-label={t.settingsWeeklyGoal ?? "Weekly goal"}
+              className="w-full bg-transparent py-3 text-base font-bold text-white placeholder-neutral-700 outline-none min-h-[44px]"
+              style={{ fontVariantNumeric: "tabular-nums" }}
+            />
+          </div>
+          <p className="text-[11px] text-neutral-600 leading-relaxed mt-2">
+            {t.settingsWeeklyGoalHint ??
+              "Used for goal pacing on the dashboard. Leave empty to turn it off."}
+          </p>
         </section>
 
         {/* Zakat */}

@@ -3,7 +3,7 @@ import { signOut } from "firebase/auth";
 import { auth } from "../firebase";
 
 const STORAGE_KEY = "gigshield-settings";
-const DEFAULTS = { defaultPlatform: "grab", showZakat: false };
+const DEFAULTS = { defaultPlatform: "grab", showZakat: false, weeklyGoal: 0 };
 
 function loadSettings() {
   try {
@@ -19,6 +19,7 @@ const SettingsContext = createContext({
   ...DEFAULTS,
   setDefaultPlatform: () => {},
   setShowZakat: () => {},
+  setWeeklyGoal: () => {},
   clearData: () => {},
 });
 
@@ -37,6 +38,8 @@ export function SettingsProvider({ children }) {
     setSettings((s) => ({ ...s, defaultPlatform }));
   const setShowZakat = (showZakat) =>
     setSettings((s) => ({ ...s, showZakat }));
+  const setWeeklyGoal = (weeklyGoal) =>
+    setSettings((s) => ({ ...s, weeklyGoal }));
 
   async function clearData() {
     try {
@@ -50,7 +53,7 @@ export function SettingsProvider({ children }) {
 
   return (
     <SettingsContext.Provider
-      value={{ ...settings, setDefaultPlatform, setShowZakat, clearData }}
+      value={{ ...settings, setDefaultPlatform, setShowZakat, setWeeklyGoal, clearData }}
     >
       {children}
     </SettingsContext.Provider>
