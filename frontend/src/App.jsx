@@ -10,6 +10,7 @@ import RightsCard from "./components/RightsCard";
 import EditShiftSheet from "./components/EditShiftSheet";
 import FilterBar from "./components/FilterBar";
 import ChartsCard from "./components/ChartsCard";
+import TabBar from "./components/TabBar";
 import { platformLabel } from "./platforms";
 import { isoWeekLabel } from "./utils";
 
@@ -233,6 +234,9 @@ export default function App() {
   const pendingDeleteRef = useRef(null);
   const deleteTimer = useRef(null);
   const [filter, setFilter] = useState({ timeScope: "week", platform: "all" });
+  const [tab, setTab] = useState("home");
+  const [logOpen, setLogOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const allShifts = data?.shifts ?? [];
 
@@ -404,6 +408,16 @@ export default function App() {
                   {t.appName}
                 </h1>
                 <button
+                  onClick={() => setSettingsOpen(true)}
+                  className="text-neutral-500 hover:text-white transition-colors p-1.5 rounded-lg hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-accent"
+                  aria-label="Settings"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-[18px] h-[18px]">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33h.01a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51h.01a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v.01a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+                <button
                   onClick={toggleLang}
                   className="text-[11px] font-bold tracking-widest text-neutral-500 hover:text-white transition-colors px-2 py-1 rounded-lg hover:bg-neutral-800 focus-visible:outline-2 focus-visible:outline-accent"
                   aria-label="Toggle language"
@@ -421,44 +435,67 @@ export default function App() {
                 <p className="text-xs text-red-400 px-5">{loadError}</p>
               )}
 
-              {/* Filter bar */}
-              <FilterBar filter={filter} onChange={setFilter} />
+              {tab === "home" && (
+                <div
+                  role="tabpanel"
+                  id="panel-home"
+                  aria-labelledby="tab-home"
+                  className="space-y-3"
+                >
+                  <FilterBar filter={filter} onChange={setFilter} />
+                  <HeroMetric
+                    summary={filteredSummary}
+                    loading={loading || !userId}
+                    filter={filter}
+                  />
+                  <ChartsCard filteredShifts={filteredShifts} filter={filter} />
+                  <EarningsSummary
+                    filteredShifts={filteredShifts}
+                    filteredSummary={filteredSummary}
+                    loading={loading || !userId}
+                    onEdit={setEditingShift}
+                    onClearFilters={handleClearFilters}
+                    filter={filter}
+                  />
+                  <ProjectionCard
+                    summary={data?.summary}
+                    loading={loading || !userId}
+                    filter={filter}
+                  />
+                </div>
+              )}
 
-              {/* Hero metric */}
-              <HeroMetric
-                summary={filteredSummary}
-                loading={loading || !userId}
-                filter={filter}
-              />
-              {/* Charts */}
-              <ChartsCard filteredShifts={filteredShifts} filter={filter} />
-              <EarningsSummary
-                filteredShifts={filteredShifts}
-                filteredSummary={filteredSummary}
-                loading={loading || !userId}
-                onEdit={setEditingShift}
-                onClearFilters={handleClearFilters}
-                filter={filter}
-              />
-              <ProjectionCard
-                summary={data?.summary}
-                loading={loading || !userId}
-                filter={filter}
-              />
-              <ComplianceCard summary={data?.summary} />
-              <RightsCard />
-
-              <footer className="px-5 pt-1 pb-3">
-                <p className="text-[11px] text-neutral-700 leading-relaxed">
-                  {t.footer}
-                </p>
-              </footer>
+              {tab === "protection" && (
+                <div
+                  role="tabpanel"
+                  id="panel-protection"
+                  aria-labelledby="tab-protection"
+                  className="space-y-3"
+                >
+                  <ComplianceCard summary={data?.summary} defaultExpanded />
+                  <RightsCard />
+                  <footer className="px-5 pt-1 pb-3">
+                    <p className="text-[11px] text-neutral-700 leading-relaxed">
+                      {t.footer}
+                    </p>
+                  </footer>
+                </div>
+              )}
 
               <div className="h-4" />
             </div>
           </div>
 
-          <ShiftLogger userId={userId} onLogged={handleLogged} />
+          <TabBar tab={tab} onChange={setTab} onLog={() => setLogOpen(true)} />
+
+          <ShiftLogger
+            userId={userId}
+            onLogged={handleLogged}
+            open={logOpen}
+            onClose={() => setLogOpen(false)}
+          />
+
+          {settingsOpen && null /* SettingsSheet arrives in Task C5 */}
 
           {editingShift && (
             <EditShiftSheet

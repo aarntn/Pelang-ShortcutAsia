@@ -97,9 +97,9 @@ function EpfSheet({ onClose }) {
   );
 }
 
-export default function ComplianceCard({ summary }) {
+export default function ComplianceCard({ summary, defaultExpanded = false }) {
   const { t } = useLang();
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const [sheetOpen, setSheetOpen] = useState(false);
   const activeThisWeek = (summary?.shift_count_this_week ?? 0) > 0;
 
