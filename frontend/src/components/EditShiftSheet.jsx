@@ -16,14 +16,26 @@ const SHORT_LABELS = {
 
 export default function EditShiftSheet({ shift, userId, onClose, onSaved, onDelete }) {
   const { t } = useLang();
+  const shiftDateStr = new Date(shift.logged_at).toISOString().slice(0, 10);
   const [platform, setPlatform] = useState(shift.platform);
   const [amount, setAmount] = useState(String(shift.amount));
+  const [editDate, setEditDate] = useState(shiftDateStr);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const minStr = (() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 1);
+    return d.toISOString().slice(0, 10);
+  })();
+
   const parsed = parseFloat(amount);
   const valid = !isNaN(parsed) && parsed > 0 && parsed <= 10000;
-  const unchanged = platform === shift.platform && parsed === shift.amount;
+  const unchanged =
+    platform === shift.platform &&
+    parsed === shift.amount &&
+    editDate === shiftDateStr;
 
   async function handleSave() {
     if (!valid || unchanged) return;
@@ -35,6 +47,7 @@ export default function EditShiftSheet({ shift, userId, onClose, onSaved, onDele
         userId,
         platform: platform !== shift.platform ? platform : undefined,
         amount: parsed !== shift.amount ? parsed : undefined,
+        loggedDate: editDate !== shiftDateStr ? editDate : undefined,
       });
       onSaved();
       onClose();
@@ -80,6 +93,23 @@ export default function EditShiftSheet({ shift, userId, onClose, onSaved, onDele
           autoFocus
         />
       </div>
+
+      {/* Shift date */}
+      <label className="block mb-4">
+        <span className="block text-xs font-semibold text-neutral-400 mb-1.5">
+          {t.shiftDateLabel ?? "Shift date"}
+        </span>
+        <input
+          type="date"
+          value={editDate}
+          max={todayStr}
+          min={minStr}
+          onChange={(e) => setEditDate(e.target.value)}
+          aria-label={t.shiftDateLabel ?? "Shift date"}
+          className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2.5 text-sm text-white min-h-[44px] outline-none focus-visible:outline-2 focus-visible:outline-accent"
+          style={{ colorScheme: "dark" }}
+        />
+      </label>
 
       {error && <p className="text-xs text-red-400 mb-3">{error}</p>}
 

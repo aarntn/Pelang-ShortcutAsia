@@ -22,6 +22,8 @@ export default function ShiftLogger({ userId, onLogged, open, onClose }) {
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
+  const [logDate, setLogDate] = useState(""); // "" = today (no backdate)
+  const [showDate, setShowDate] = useState(false);
   const inputRef = useRef(null);
   const defaultPlatformRef = useRef(defaultPlatform);
   defaultPlatformRef.current = defaultPlatform;
@@ -32,6 +34,8 @@ export default function ShiftLogger({ userId, onLogged, open, onClose }) {
       setPlatform(defaultPlatformRef.current);
       setAmount("");
       setError(null);
+      setLogDate("");
+      setShowDate(false);
     }
   }, [open]);
 
@@ -58,7 +62,12 @@ export default function ShiftLogger({ userId, onLogged, open, onClose }) {
     setBusy(true);
     setError(null);
     try {
-      const shift = await logShift({ userId, platform, amount: value });
+      const shift = await logShift({
+        userId,
+        platform,
+        amount: value,
+        loggedDate: logDate && logDate !== todayStr ? logDate : undefined,
+      });
       onLogged?.(shift);
       handleClose();
     } catch (err) {
@@ -68,6 +77,13 @@ export default function ShiftLogger({ userId, onLogged, open, onClose }) {
       setBusy(false);
     }
   }
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const minStr = (() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 1);
+    return d.toISOString().slice(0, 10);
+  })();
 
   const parsedAmount = parseFloat(amount);
   const isValid = Number.isFinite(parsedAmount) && parsedAmount > 0;
@@ -99,6 +115,36 @@ export default function ShiftLogger({ userId, onLogged, open, onClose }) {
           </button>
         ))}
       </div>
+
+      {/* Date chip — defaults to today, tap to backdate */}
+      <div className="flex">
+        <button
+          onClick={() => setShowDate((v) => !v)}
+          className="flex items-center gap-1 text-xs font-semibold text-neutral-400 hover:text-white bg-neutral-900 hover:bg-neutral-800 rounded-lg px-2.5 min-h-[32px] mb-3 transition-colors focus-visible:outline-2 focus-visible:outline-accent"
+          aria-expanded={showDate}
+        >
+          {logDate && logDate !== todayStr
+            ? new Date(logDate + "T00:00:00Z").toLocaleDateString("en-MY", {
+                day: "numeric",
+                month: "short",
+                timeZone: "UTC",
+              })
+            : (t.todayChip ?? "Today")}{" "}
+          ▾
+        </button>
+      </div>
+      {showDate && (
+        <input
+          type="date"
+          value={logDate || todayStr}
+          max={todayStr}
+          min={minStr}
+          onChange={(e) => setLogDate(e.target.value)}
+          aria-label={t.shiftDateLabel ?? "Shift date"}
+          className="w-full mb-3 bg-neutral-900 border border-neutral-800 rounded-xl px-3 py-2.5 text-sm text-white min-h-[44px] outline-none focus-visible:outline-2 focus-visible:outline-accent"
+          style={{ colorScheme: "dark" }}
+        />
+      )}
 
       {/* Amount input */}
       <div
