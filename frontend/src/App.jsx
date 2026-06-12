@@ -11,6 +11,7 @@ import EditShiftSheet from "./components/EditShiftSheet";
 import SettingsSheet from "./components/SettingsSheet";
 import FilterBar from "./components/FilterBar";
 import ChartsCard from "./components/ChartsCard";
+import InsightsCard from "./components/InsightsCard";
 import TabBar from "./components/TabBar";
 import { platformLabel } from "./platforms";
 import { mondayOf, addDays, isSameWeek, isSameMonth } from "./utils";
@@ -509,6 +510,7 @@ export default function App() {
                     anchor={anchor}
                     isCurrentPeriod={isCurrentPeriod}
                   />
+                  <InsightsCard shifts={visibleShifts} />
                   <EarningsSummary
                     filteredShifts={filteredShifts}
                     filteredSummary={filteredSummary}
