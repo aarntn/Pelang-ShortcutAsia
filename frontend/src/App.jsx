@@ -287,11 +287,11 @@ export default function App() {
       setData(res);
     } catch (err) {
       console.error(err);
-      setLoadError(t.couldntLoad);
+      setLoadError(true); // translated at render so a language toggle doesn't refetch
     } finally {
       setLoading(false);
     }
-  }, [userId, t]);
+  }, [userId]);
 
   useEffect(() => {
     refresh();
@@ -433,7 +433,7 @@ export default function App() {
                 </p>
               )}
               {loadError && (
-                <p className="text-xs text-red-400 px-5">{loadError}</p>
+                <p className="text-xs text-red-400 px-5">{t.couldntLoad}</p>
               )}
 
               {tab === "home" && (

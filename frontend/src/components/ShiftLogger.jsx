@@ -23,14 +23,17 @@ export default function ShiftLogger({ userId, onLogged, open, onClose }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
   const inputRef = useRef(null);
+  const defaultPlatformRef = useRef(defaultPlatform);
+  defaultPlatformRef.current = defaultPlatform;
 
+  // Reset only on open — a settings change while the sheet is open must not wipe input.
   useEffect(() => {
     if (open) {
-      setPlatform(defaultPlatform);
+      setPlatform(defaultPlatformRef.current);
       setAmount("");
       setError(null);
     }
-  }, [open, defaultPlatform]);
+  }, [open]);
 
   useEffect(() => {
     if (open) {

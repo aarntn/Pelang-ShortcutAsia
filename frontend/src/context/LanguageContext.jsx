@@ -18,15 +18,13 @@ export function LanguageProvider({ children }) {
   });
 
   function toggleLang() {
-    setLang((l) => {
-      const next = l === "en" ? "bm" : "en";
-      try {
-        localStorage.setItem("gigshield-lang", next);
-      } catch {
-        // storage unavailable — language just won't persist
-      }
-      return next;
-    });
+    const next = lang === "en" ? "bm" : "en";
+    try {
+      localStorage.setItem("gigshield-lang", next);
+    } catch {
+      // storage unavailable — language just won't persist
+    }
+    setLang(next);
   }
 
   return (
