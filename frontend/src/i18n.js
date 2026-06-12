@@ -106,6 +106,23 @@ const en = {
   settingsClearData: "Clear my data",
   settingsClearConfirm: "Tap again to confirm",
   settingsDataNote: "Your data is stored under an anonymous ID on this device. Clearing it starts fresh and cannot be undone.",
+
+  // Period navigation & dates
+  weekOf: (range) => `Week of ${range}`,
+  todayChip: "Today",
+  shiftDateLabel: "Shift date",
+  // Weekly goal
+  settingsWeeklyGoal: "Weekly goal",
+  settingsWeeklyGoalHint: "Used for goal pacing on the dashboard. Leave empty to turn it off.",
+  // Insights
+  insightsLabel: "Insights",
+  insightGoalPace: (togo, perday, days, goal) => `${togo} to go — ${perday}/day across your ${days} remaining day${days === 1 ? "" : "s"} hits ${goal}.`,
+  insightGoalHit: (goal) => `Weekly goal hit — ${goal} and counting. Nice.`,
+  insightWow: (arrow, pct, prev) => `${arrow} ${pct}% vs last week (${prev}).`,
+  insightBestPlatform: (best, ratio, second) => `${best} is paying you ${ratio}× more per shift than ${second} this month.`,
+  insightBestDay: (day, avg) => `${day} are your best day — ${avg} average.`,
+  insightISaraan: "RM50/month into i-Saraan captures the full RM600 government match.",
+  weekdaysLong: ["Mondays", "Tuesdays", "Wednesdays", "Thursdays", "Fridays", "Saturdays", "Sundays"],
 };
 
 const bm = {
@@ -217,6 +234,23 @@ const bm = {
   settingsClearData: "Padam data saya",
   settingsClearConfirm: "Tekan sekali lagi untuk sahkan",
   settingsDataNote: "Data anda disimpan di bawah ID tanpa nama pada peranti ini. Memadamnya akan bermula semula dan tidak boleh dibatalkan.",
+
+  // Period navigation & dates
+  weekOf: (range) => `Minggu ${range}`,
+  todayChip: "Hari ini",
+  shiftDateLabel: "Tarikh syif",
+  // Weekly goal
+  settingsWeeklyGoal: "Sasaran mingguan",
+  settingsWeeklyGoalHint: "Digunakan untuk kadar sasaran di papan pemuka. Biarkan kosong untuk matikan.",
+  // Insights
+  insightsLabel: "Cerapan",
+  insightGoalPace: (togo, perday, days, goal) => `${togo} lagi — ${perday}/hari untuk ${days} hari berbaki mencapai ${goal}.`,
+  insightGoalHit: (goal) => `Sasaran mingguan tercapai — ${goal} dan terus bertambah. Syabas.`,
+  insightWow: (arrow, pct, prev) => `${arrow} ${pct}% berbanding minggu lepas (${prev}).`,
+  insightBestPlatform: (best, ratio, second) => `${best} membayar anda ${ratio}× lebih setiap syif berbanding ${second} bulan ini.`,
+  insightBestDay: (day, avg) => `${day} ialah hari terbaik anda — purata ${avg}.`,
+  insightISaraan: "RM50/bulan ke dalam i-Saraan meraih padanan kerajaan penuh RM600.",
+  weekdaysLong: ["Isnin", "Selasa", "Rabu", "Khamis", "Jumaat", "Sabtu", "Ahad"],
 };
 
 export const translations = { en, bm };

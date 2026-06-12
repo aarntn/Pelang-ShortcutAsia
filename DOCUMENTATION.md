@@ -76,6 +76,15 @@ flowchart TD
 - **Actual LHDN tax bracket lookup** — replace the flat 8% set-aside heuristic with a progressive calculation from projected annual income.
 - **PERKESO claim guidance** — a step-by-step flow for what to do after a work accident, the moment SOCSO coverage actually matters.
 
+### Roadmap (benchmarked against Gridwise and Solo)
+
+Gridwise and Solo are the US category leaders in gig-driver income tracking. Their core loop — week-by-week trends, best-platform comparison, goal pacing — is what the dashboard now implements. The rest of their feature set is the honest "with more time" list, with Malaysia-specific caveats:
+
+- **Automatic income syncing** — Gridwise links platform accounts and imports earnings. Grab and Foodpanda expose no earnings APIs in Malaysia, so manual logging (with backdating) is the only honest mechanism today.
+- **Mileage and expense tracking** — their tax-deduction layer is built around the IRS standard mileage rate, a US-specific mechanic with no LHDN equivalent; it would need a from-scratch Malaysian tax treatment, plus GPS capture.
+- **Community earnings comparison** ("how do drivers in your city do?") — requires a user base we don't have.
+- **Earnings per hour** — deliberately not faked: the app doesn't capture shift duration. An optional start/end time field would make per-hour metrics honest, and is the cheapest item on this list.
+
 ## 8. Competitive context
 
 ShiftTracker (Boise, Idaho) is the closest global comparator: a US gig-income tracker built around IRS mileage deductions and Schedule C filings — mechanics with no Malaysian equivalent. Pre-Gig Workers Act 2025 (Act 872) there was no Malaysian statutory layer to build on; post-Act, there is a mandatory 1.25% PERKESO deduction touching 1.2 million workers and a government EPF match most of them don't know exists, and no consumer product addressing either. The Malaysia-specific compliance framing is the differentiator: this is not a generic expense tracker with a Malaysian skin, it is a rights-awareness tool that happens to track income.
