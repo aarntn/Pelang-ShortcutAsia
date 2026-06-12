@@ -96,6 +96,16 @@ const en = {
   // Footer
   footer:
     "Data stored privately by device. Clear browser data to reset. Know your shifts. Know your rights.",
+
+  // Tabs & settings
+  tabHome: "Home",
+  tabProtection: "Protection",
+  settingsTitle: "Settings",
+  settingsLanguage: "Language",
+  settingsDefaultPlatform: "Default platform",
+  settingsClearData: "Clear my data",
+  settingsClearConfirm: "Tap again to confirm",
+  settingsDataNote: "Your data is stored under an anonymous ID on this device. Clearing it starts fresh and cannot be undone.",
 };
 
 const bm = {
@@ -197,6 +207,16 @@ const bm = {
   // Footer
   footer:
     "Data disimpan secara peribadi mengikut peranti. Padam data pelayar untuk tetapkan semula. Kenali syif anda. Kenali hak anda.",
+
+  // Tabs & settings
+  tabHome: "Utama",
+  tabProtection: "Perlindungan",
+  settingsTitle: "Tetapan",
+  settingsLanguage: "Bahasa",
+  settingsDefaultPlatform: "Platform lalai",
+  settingsClearData: "Padam data saya",
+  settingsClearConfirm: "Tekan sekali lagi untuk sahkan",
+  settingsDataNote: "Data anda disimpan di bawah ID tanpa nama pada peranti ini. Memadamnya akan bermula semula dan tidak boleh dibatalkan.",
 };
 
 export const translations = { en, bm };
