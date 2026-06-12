@@ -12,6 +12,11 @@ export function AuthProvider({ children }) {
     const unsub = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUserId(user.uid);
+        // Dev helper: UID visible in console and copyable via window.__uid
+        if (import.meta.env.DEV) {
+          window.__uid = user.uid;
+          console.info(`[GigShield] UID: ${user.uid}  (window.__uid to copy)`);
+        }
       } else {
         signInAnonymously(auth).catch((err) => {
           console.error("Anonymous sign-in failed:", err);
