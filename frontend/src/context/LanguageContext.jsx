@@ -8,10 +8,25 @@ const LanguageContext = createContext({
 });
 
 export function LanguageProvider({ children }) {
-  const [lang, setLang] = useState("en");
+  const [lang, setLang] = useState(() => {
+    try {
+      const saved = localStorage.getItem("gigshield-lang");
+      return saved === "bm" || saved === "en" ? saved : "en";
+    } catch {
+      return "en";
+    }
+  });
 
   function toggleLang() {
-    setLang((l) => (l === "en" ? "bm" : "en"));
+    setLang((l) => {
+      const next = l === "en" ? "bm" : "en";
+      try {
+        localStorage.setItem("gigshield-lang", next);
+      } catch {
+        // storage unavailable — language just won't persist
+      }
+      return next;
+    });
   }
 
   return (
