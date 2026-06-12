@@ -23,19 +23,23 @@ export default function EditShiftSheet({ shift, userId, onClose, onSaved, onDele
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  // Local date (en-CA formats as YYYY-MM-DD) so a MY user after midnight
+  // local time can still pick their actual today.
+  const todayStr = new Date().toLocaleDateString("en-CA");
   const minStr = (() => {
     const d = new Date();
     d.setFullYear(d.getFullYear() - 1);
-    return d.toISOString().slice(0, 10);
+    return d.toLocaleDateString("en-CA");
   })();
 
   const parsed = parseFloat(amount);
   const valid = !isNaN(parsed) && parsed > 0 && parsed <= 10000;
+  // Empty date input (cleared field) counts as unchanged — never a no-op save.
+  const dateChanged = editDate !== "" && editDate !== shiftDateStr;
   const unchanged =
     platform === shift.platform &&
     parsed === shift.amount &&
-    editDate === shiftDateStr;
+    !dateChanged;
 
   async function handleSave() {
     if (!valid || unchanged) return;
@@ -47,7 +51,7 @@ export default function EditShiftSheet({ shift, userId, onClose, onSaved, onDele
         userId,
         platform: platform !== shift.platform ? platform : undefined,
         amount: parsed !== shift.amount ? parsed : undefined,
-        loggedDate: editDate !== shiftDateStr ? editDate : undefined,
+        loggedDate: dateChanged ? editDate : undefined,
       });
       onSaved();
       onClose();

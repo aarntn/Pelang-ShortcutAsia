@@ -16,7 +16,7 @@ const SHORT_LABELS = {
 };
 
 export default function ShiftLogger({ userId, onLogged, open, onClose }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { defaultPlatform } = useSettings();
   const [platform, setPlatform] = useState(defaultPlatform);
   const [amount, setAmount] = useState("");
@@ -78,11 +78,13 @@ export default function ShiftLogger({ userId, onLogged, open, onClose }) {
     }
   }
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  // Local date (en-CA formats as YYYY-MM-DD) so a MY user after midnight
+  // local time can still pick their actual today.
+  const todayStr = new Date().toLocaleDateString("en-CA");
   const minStr = (() => {
     const d = new Date();
     d.setFullYear(d.getFullYear() - 1);
-    return d.toISOString().slice(0, 10);
+    return d.toLocaleDateString("en-CA");
   })();
 
   const parsedAmount = parseFloat(amount);
@@ -124,11 +126,10 @@ export default function ShiftLogger({ userId, onLogged, open, onClose }) {
           aria-expanded={showDate}
         >
           {logDate && logDate !== todayStr
-            ? new Date(logDate + "T00:00:00Z").toLocaleDateString("en-MY", {
-                day: "numeric",
-                month: "short",
-                timeZone: "UTC",
-              })
+            ? new Date(logDate + "T00:00:00Z").toLocaleDateString(
+                lang === "bm" ? "ms-MY" : "en-MY",
+                { day: "numeric", month: "short", timeZone: "UTC" }
+              )
             : (t.todayChip ?? "Today")}{" "}
           ▾
         </button>

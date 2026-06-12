@@ -13,9 +13,12 @@ def _validate_logged_date(v: Optional[date]) -> Optional[date]:
     if v is None:
         return v
     today = datetime.now(timezone.utc).date()
-    if v > today:
+    # +1 day tolerance: a client east of UTC (Malaysia is UTC+8) may
+    # legitimately send its local "today" while the server is still on
+    # the previous UTC date.
+    if v > today + timedelta(days=1):
         raise ValueError("logged_date cannot be in the future")
-    if v < today - timedelta(days=365):
+    if v < today - timedelta(days=366):
         raise ValueError("logged_date cannot be more than a year ago")
     return v
 

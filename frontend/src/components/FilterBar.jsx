@@ -184,9 +184,13 @@ export default function FilterBar({ filter, onChange, anchor, onAnchorChange, is
           <button
             type="button"
             onClick={goForward}
-            disabled={isCurrentPeriod}
+            aria-disabled={isCurrentPeriod}
             aria-label="Next period"
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-neutral-400 focus-visible:outline-2 focus-visible:outline-accent"
+            className={`min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl transition-colors focus-visible:outline-2 focus-visible:outline-accent ${
+              isCurrentPeriod
+                ? "text-neutral-400 opacity-30 cursor-default"
+                : "text-neutral-400 hover:text-white hover:bg-neutral-800"
+            }`}
           >
             <svg
               viewBox="0 0 16 16"
