@@ -8,6 +8,7 @@ import ProjectionCard from "./components/ProjectionCard";
 import ComplianceCard from "./components/ComplianceCard";
 import RightsCard from "./components/RightsCard";
 import EditShiftSheet from "./components/EditShiftSheet";
+import SettingsSheet from "./components/SettingsSheet";
 import FilterBar from "./components/FilterBar";
 import ChartsCard from "./components/ChartsCard";
 import TabBar from "./components/TabBar";
@@ -495,7 +496,7 @@ export default function App() {
             onClose={() => setLogOpen(false)}
           />
 
-          {settingsOpen && null /* SettingsSheet arrives in Task C5 */}
+          {settingsOpen && <SettingsSheet onClose={() => setSettingsOpen(false)} />}
 
           {editingShift && (
             <EditShiftSheet

@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { useLang } from "../context/LanguageContext";
+import { useSettings } from "../context/SettingsContext";
 
 const TAX_SET_ASIDE = 0.08;
 const SOCSO_RATE = 0.0125;
@@ -29,7 +29,7 @@ function Toggle({ checked, onChange, label }) {
 
 export default function ProjectionCard({ summary, filter }) {
   const { t } = useLang();
-  const [showZakat, setShowZakat] = useState(false);
+  const { showZakat, setShowZakat } = useSettings();
 
   // Projections from partial filtered data are misleading — suppress unless default filter.
   if (filter && (filter.timeScope !== "week" || filter.platform !== "all")) {
