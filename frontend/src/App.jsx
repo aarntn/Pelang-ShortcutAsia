@@ -13,7 +13,7 @@ import FilterBar from "./components/FilterBar";
 import ChartsCard from "./components/ChartsCard";
 import TabBar from "./components/TabBar";
 import { platformLabel } from "./platforms";
-import { isoWeekLabel } from "./utils";
+import { mondayOf, addDays, isSameWeek, isSameMonth } from "./utils";
 
 function SignalIcon() {
   return (
@@ -235,6 +235,7 @@ export default function App() {
   const pendingDeleteRef = useRef(null);
   const deleteTimer = useRef(null);
   const [filter, setFilter] = useState({ timeScope: "week", platform: "all" });
+  const [anchor, setAnchor] = useState(() => new Date());
   const [tab, setTab] = useState("home");
   const [logOpen, setLogOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -251,16 +252,28 @@ export default function App() {
     if (filter.platform !== "all") {
       result = result.filter((s) => s.platform === filter.platform);
     }
-    const now = new Date();
     if (filter.timeScope === "week") {
-      const currentWeek = isoWeekLabel(now);
-      result = result.filter((s) => s.week_label === currentWeek);
+      const start = mondayOf(anchor);
+      const end = addDays(start, 7);
+      result = result.filter((s) => {
+        const d = new Date(s.logged_at);
+        return d >= start && d < end;
+      });
     } else if (filter.timeScope === "month") {
-      const ym = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
-      result = result.filter((s) => new Date(s.logged_at).toISOString().slice(0, 7) === ym);
+      result = result.filter((s) => {
+        const d = new Date(s.logged_at);
+        return d.getUTCFullYear() === anchor.getUTCFullYear() && d.getUTCMonth() === anchor.getUTCMonth();
+      });
     }
     return result;
-  }, [visibleShifts, filter]);
+  }, [visibleShifts, filter, anchor]);
+
+  const isCurrentPeriod = useMemo(() => {
+    const now = new Date();
+    if (filter.timeScope === "week") return isSameWeek(anchor, now);
+    if (filter.timeScope === "month") return isSameMonth(anchor, now);
+    return true; // "all" has no paging
+  }, [filter.timeScope, anchor]);
 
   const filteredSummary = useMemo(() => {
     const total = filteredShifts.reduce((s, r) => s + r.amount, 0);
@@ -338,7 +351,15 @@ export default function App() {
     setToast(null);
   }
 
+  function handleFilterChange(next) {
+    if (next.timeScope !== filter.timeScope) {
+      setAnchor(new Date()); // changing scope always returns to the current period
+    }
+    setFilter(next);
+  }
+
   function handleClearFilters() {
+    setAnchor(new Date());
     setFilter({ timeScope: "week", platform: "all" });
   }
 
@@ -443,13 +464,26 @@ export default function App() {
                   aria-labelledby="tab-home"
                   className="space-y-3"
                 >
-                  <FilterBar filter={filter} onChange={setFilter} />
+                  <FilterBar
+                    filter={filter}
+                    onChange={handleFilterChange}
+                    anchor={anchor}
+                    onAnchorChange={setAnchor}
+                    isCurrentPeriod={isCurrentPeriod}
+                  />
                   <HeroMetric
                     summary={filteredSummary}
                     loading={loading || !userId}
                     filter={filter}
+                    anchor={anchor}
+                    isCurrentPeriod={isCurrentPeriod}
                   />
-                  <ChartsCard filteredShifts={filteredShifts} filter={filter} />
+                  <ChartsCard
+                    filteredShifts={filteredShifts}
+                    filter={filter}
+                    anchor={anchor}
+                    isCurrentPeriod={isCurrentPeriod}
+                  />
                   <EarningsSummary
                     filteredShifts={filteredShifts}
                     filteredSummary={filteredSummary}
@@ -462,6 +496,7 @@ export default function App() {
                     summary={data?.summary}
                     loading={loading || !userId}
                     filter={filter}
+                    isCurrentPeriod={isCurrentPeriod}
                   />
                 </div>
               )}

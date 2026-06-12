@@ -13,3 +13,31 @@ export function isoWeekLabel(date = new Date()) {
   const week = Math.ceil(((d - startOfYear) / 86400000 + 1) / 7);
   return `${year}-W${String(week).padStart(2, "0")}`;
 }
+
+/** UTC Monday 00:00 of the week containing `date`. */
+export function mondayOf(date) {
+  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const day = d.getUTCDay() || 7; // Mon=1 … Sun=7
+  d.setUTCDate(d.getUTCDate() - (day - 1));
+  return d;
+}
+
+export function addDays(date, n) {
+  const d = new Date(date);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d;
+}
+
+export function addMonths(date, n) {
+  // Anchor to the 1st to avoid end-of-month rollover (Jan 31 + 1mo → Mar 3).
+  const d = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + n, 1));
+  return d;
+}
+
+export function isSameWeek(a, b) {
+  return mondayOf(a).getTime() === mondayOf(b).getTime();
+}
+
+export function isSameMonth(a, b) {
+  return a.getUTCFullYear() === b.getUTCFullYear() && a.getUTCMonth() === b.getUTCMonth();
+}
