@@ -2,17 +2,25 @@
 
 **Know your shifts. Know your rights.** A multi-platform income tracker that shows Malaysian gig workers exactly what the Gig Workers Act 2025 means for every shift they work.
 
+> Submission for the **Shortcut Asia Internship Challenge 2026** — a self-proposed topic. Approach, technical decisions, architecture, flowcharts, and challenges are documented in [DOCUMENTATION.md](./DOCUMENTATION.md).
+
 ## Problem statement
 
 Malaysia's Gig Workers Act 2025 (in force March 2026) made SOCSO contributions mandatory for ~1.2 million gig workers at 1.25% per ride or delivery, and Budget 2026 introduced i-Saraan Plus, a government EPF match worth up to RM600/year that most gig workers have never heard of. No consumer tool exists to help a Grab driver or Foodpanda rider working across multiple platforms understand what these deductions mean per shift, track their cross-platform income, or see what protection they actually have. Pelang fills that gap with the simplest possible interface: log a shift, see your coverage, understand your rights.
 
-## Features
+## Two core features
 
-- **One-tap shift logging** — pick a platform, type the amount (Touch 'n Go-style reverse-decimal keypad), done. SOCSO is auto-calculated server-side.
-- **Screenshot OCR** — snap your in-app earnings screen; Google Gemini reads the RM total and platform and pre-fills the form.
-- **Cross-platform dashboard** — hero earnings figure, weekly/monthly/all-time filters, per-platform breakdown, projections, and expense-adjusted net income.
-- **Protection status** — live SOCSO coverage, an i-Saraan Plus EPF nudge, and plain-language rights explainers tied to Act 872.
-- **Penyata Pendapatan** — generates a bilingual, print-ready income statement (PDF via the browser) for loan or grant applications.
+The scope was deliberately kept to two well-developed features (depth over breadth):
+
+1. **Shift income logger** — pick a platform and type the amount on a Touch 'n Go-style reverse-decimal keypad; SOCSO (1.25%) is auto-calculated and stored server-side. Feeds a cross-platform dashboard: hero earnings figure, weekly/monthly/all-time filters, per-platform breakdown, projections, and expense-adjusted net income.
+2. **Protection status** — live SOCSO coverage for the current week, an i-Saraan Plus EPF nudge, and plain-language rights explainers tied to the Gig Workers Act 2025 (Act 872).
+
+## Enhancements (added after the core was solid)
+
+Built as unique selling points once the two core features worked — not as half-finished extras:
+
+- **Screenshot OCR** — snap your in-app earnings screen; Google Gemini reads the RM total and platform and pre-fills the form (you still confirm before logging).
+- **Penyata Pendapatan** — generates a bilingual, print-ready income statement (browser print-to-PDF) for loan or grant applications.
 - **Custom platforms** — add platforms not in the preset list (e.g. Bolt).
 - **Bilingual** — full English / Bahasa Melayu toggle.
 - **Installable PWA** with offline-tolerant caching.
@@ -30,6 +38,7 @@ Malaysia's Gig Workers Act 2025 (in force March 2026) made SOCSO contributions m
 
 - **App:** https://pelang-my.vercel.app
 - **Demo data:** https://pelang-my.vercel.app/?demo — loads a pre-seeded account (~120 shifts + expenses across Apr–Jun) so the dashboard, insights, and statement generator all have data to show. Without `?demo`, every visitor gets their own private, empty account.
+- **Demo video:** _<add YouTube (unlisted) or Google Drive link here>_
 
 ## Run locally
 
