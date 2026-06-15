@@ -43,3 +43,38 @@ export function deleteShift({ shiftId, userId }) {
     { method: "DELETE" }
   );
 }
+
+export function importShifts({ userId, shifts }) {
+  // shifts: [{ platform, amount, logged_date }]
+  return request("/shifts/bulk", {
+    method: "POST",
+    body: JSON.stringify({ user_id: userId, shifts }),
+  });
+}
+
+export function logExpense({ userId, category, amount, loggedDate }) {
+  const body = { user_id: userId, category, amount };
+  if (loggedDate) body.logged_date = loggedDate;
+  return request("/expenses", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function fetchExpenses(userId) {
+  return request(`/expenses/${encodeURIComponent(userId)}`);
+}
+
+export function deleteExpense({ expenseId, userId }) {
+  return request(
+    `/expenses/${encodeURIComponent(expenseId)}?user_id=${encodeURIComponent(userId)}`,
+    { method: "DELETE" }
+  );
+}
+
+export function ocrShift({ imageBase64, mimeType }) {
+  return request("/ocr-shift", {
+    method: "POST",
+    body: JSON.stringify({ image_base64: imageBase64, mime_type: mimeType }),
+  });
+}

@@ -1,6 +1,8 @@
 import { createContext, useContext, useState } from "react";
 import { translations } from "../i18n";
 
+const LANG_KEY = "pelang-lang"; // kept in sync with SettingsContext.clearData
+
 const LanguageContext = createContext({
   t: translations.en,
   lang: "en",
@@ -10,7 +12,7 @@ const LanguageContext = createContext({
 export function LanguageProvider({ children }) {
   const [lang, setLang] = useState(() => {
     try {
-      const saved = localStorage.getItem("gigshield-lang");
+      const saved = localStorage.getItem(LANG_KEY);
       return saved === "bm" || saved === "en" ? saved : "en";
     } catch {
       return "en";
@@ -20,7 +22,7 @@ export function LanguageProvider({ children }) {
   function toggleLang() {
     const next = lang === "en" ? "bm" : "en";
     try {
-      localStorage.setItem("gigshield-lang", next);
+      localStorage.setItem(LANG_KEY, next);
     } catch {
       // storage unavailable — language just won't persist
     }

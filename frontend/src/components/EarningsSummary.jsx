@@ -1,5 +1,8 @@
+import { useState } from "react";
 import { PLATFORMS, platformColor, platformLabel, timeAgo } from "../platforms";
 import { useLang } from "../context/LanguageContext";
+
+const COLLAPSED_COUNT = 6;
 
 const SHORT_LABELS = {
   grab: "Grab", foodpanda: "Panda", lalamove: "Lala",
@@ -96,11 +99,14 @@ function LoadingSkeleton() {
 
 export default function EarningsSummary({ filteredShifts, filteredSummary, loading, onEdit, onClearFilters, filter }) {
   const { t } = useLang();
+  const [expanded, setExpanded] = useState(false);
 
   if (loading) return <LoadingSkeleton />;
 
   const breakdown = filteredSummary?.breakdown_by_platform ?? {};
-  const recent = (filteredShifts ?? []).slice(0, 20);
+  const all = filteredShifts ?? [];
+  const recent = expanded ? all : all.slice(0, COLLAPSED_COUNT);
+  const hiddenCount = all.length - recent.length;
   const grouped = groupByDate(recent, t);
   const hasBreakdown = PLATFORMS.some((p) => (breakdown[p.id] ?? 0) > 0);
   const isDefaultFilter = !filter || (filter.timeScope === "week" && filter.platform === "all");
@@ -194,6 +200,16 @@ export default function EarningsSummary({ filteredShifts, filteredSummary, loadi
               </ul>
             </div>
           ))}
+          {(hiddenCount > 0 || expanded) && (
+            <button
+              onClick={() => setExpanded((v) => !v)}
+              className="w-full min-h-[40px] mt-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-xs font-bold text-neutral-400 hover:text-neutral-200 transition-colors focus-visible:outline-2 focus-visible:outline-accent"
+            >
+              {expanded
+                ? (t.seeLess ?? "Show less")
+                : (t.seeAll ?? ((n) => `See all (${n} more)`))(hiddenCount)}
+            </button>
+          )}
         </div>
       )}
     </section>

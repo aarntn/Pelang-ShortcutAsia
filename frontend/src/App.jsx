@@ -1,11 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "./context/AuthContext";
 import { useLang } from "./context/LanguageContext";
-import { fetchShifts, deleteShift } from "./api";
+import { fetchShifts, deleteShift, fetchExpenses, deleteExpense } from "./api";
 import ShiftLogger from "./components/ShiftLogger";
+import ImportSheet from "./components/ImportSheet";
+import ExpensesCard from "./components/ExpensesCard";
+import WeeklyDigest from "./components/WeeklyDigest";
+import RecordsCard from "./components/RecordsCard";
 import EarningsSummary from "./components/EarningsSummary";
 import ProjectionCard from "./components/ProjectionCard";
 import ComplianceCard from "./components/ComplianceCard";
+import ContributionLedger from "./components/ContributionLedger";
+import AccidentCard from "./components/AccidentCard";
+import SaraanCard from "./components/SaraanCard";
+import ProtectionLinks from "./components/ProtectionLinks";
 import RightsCard from "./components/RightsCard";
 import EditShiftSheet from "./components/EditShiftSheet";
 import SettingsSheet from "./components/SettingsSheet";
@@ -13,68 +21,13 @@ import FilterBar from "./components/FilterBar";
 import ChartsCard from "./components/ChartsCard";
 import InsightsCard from "./components/InsightsCard";
 import TabBar from "./components/TabBar";
-import { platformLabel } from "./platforms";
+import StatusBar from "./components/StatusBar";
+import PhoneFrame from "./components/PhoneFrame";
+import HeroMetric from "./components/HeroMetric";
+import Toast from "./components/Toast";
 import { mondayOf, addDays, isSameWeek, isSameMonth } from "./utils";
-
-function SignalIcon() {
-  return (
-    <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor">
-      <rect x="0" y="8" width="3" height="4" rx="0.5" opacity="0.3" />
-      <rect x="4.7" y="5.5" width="3" height="6.5" rx="0.5" opacity="0.3" />
-      <rect x="9.3" y="3" width="3" height="9" rx="0.5" opacity="0.3" />
-      <rect x="14" y="0" width="3" height="12" rx="0.5" />
-    </svg>
-  );
-}
-
-function WifiIcon() {
-  return (
-    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor">
-      <circle cx="8" cy="10.5" r="1.5" />
-      <path
-        d="M4.4 7.2A5.2 5.2 0 0111.6 7.2"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        fill="none"
-        strokeLinecap="round"
-        opacity="0.8"
-      />
-      <path
-        d="M1.4 4.3A9.2 9.2 0 0114.6 4.3"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        fill="none"
-        strokeLinecap="round"
-        opacity="0.4"
-      />
-    </svg>
-  );
-}
-
-function BatteryIcon() {
-  return (
-    <svg width="25" height="12" viewBox="0 0 25 12" fill="none">
-      <rect
-        x="0.75"
-        y="0.75"
-        width="20.5"
-        height="10.5"
-        rx="3.25"
-        stroke="currentColor"
-        strokeOpacity="0.35"
-        strokeWidth="1.5"
-      />
-      <rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor" />
-      <path
-        d="M22.5 4.5v3"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeOpacity="0.4"
-      />
-    </svg>
-  );
-}
+import { useSettings } from "./context/SettingsContext";
+import { useEveningReminder } from "./useEveningReminder";
 
 function ShieldIcon({ className }) {
   return (
@@ -90,161 +43,6 @@ function ShieldIcon({ className }) {
         strokeLinejoin="round"
       />
     </svg>
-  );
-}
-
-function StatusBar() {
-  return (
-    <div className="shrink-0 relative text-white" style={{ height: 52 }}>
-      <div
-        className="absolute left-1/2 -translate-x-1/2 top-[10px] z-10 bg-black"
-        style={{ width: 126, height: 34, borderRadius: 17 }}
-      />
-      <div
-        className="flex items-end justify-between pb-1.5"
-        style={{ height: "100%", padding: "0 28px" }}
-      >
-        <span className="text-[13px] font-semibold tracking-tight">9:41</span>
-        <div className="flex items-center gap-1.5">
-          <SignalIcon />
-          <WifiIcon />
-          <BatteryIcon />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const SHORT_LABELS = {
-  grab: "Grab",
-  foodpanda: "Panda",
-  lalamove: "Lala",
-  shopeefood: "Shopee",
-  maxim: "Maxim",
-  indrive: "inDrive",
-  other: "Other",
-};
-
-function HeroMetric({ summary, loading, filter, anchor, isCurrentPeriod }) {
-  const { t, lang } = useLang();
-  const locale = lang === "bm" ? "ms-MY" : "en-MY";
-
-  if (loading) {
-    return (
-      <div className="px-5 pt-2 pb-4 space-y-2.5">
-        <div className="h-2.5 w-14 bg-neutral-800 rounded animate-pulse" />
-        <div className="h-12 w-44 bg-neutral-800 rounded-lg animate-pulse" />
-        <div className="h-2.5 w-40 bg-neutral-800 rounded animate-pulse" />
-      </div>
-    );
-  }
-
-  const total = summary?.total_earned ?? 0;
-  const socso = summary?.total_socso ?? 0;
-  const shiftCount = summary?.shift_count ?? 0;
-
-  // Honest labels: past periods show the actual date range, not "This week/month".
-  let scopeLabel;
-  if (filter?.timeScope === "month") {
-    scopeLabel = isCurrentPeriod
-      ? (t.thisMonth ?? "This month")
-      : anchor.toLocaleDateString(locale, { month: "long", year: "numeric", timeZone: "UTC" });
-  } else if (filter?.timeScope === "all") {
-    scopeLabel = t.allTime ?? "All time";
-  } else if (isCurrentPeriod) {
-    scopeLabel = t.thisWeek ?? "This week";
-  } else {
-    const start = mondayOf(anchor);
-    const end = addDays(start, 6);
-    const sameMonth = start.getUTCMonth() === end.getUTCMonth();
-    const startStr = start.toLocaleDateString(locale, {
-      day: "numeric",
-      month: sameMonth ? undefined : "short",
-      timeZone: "UTC",
-    });
-    const endStr = end.toLocaleDateString(locale, {
-      day: "numeric",
-      month: "short",
-      timeZone: "UTC",
-    });
-    scopeLabel = (t.weekOf ?? ((r) => `Week of ${r}`))(`${startStr}–${endStr}`);
-  }
-
-  // Lowercase only word labels ("this week", "all time") — date strings stay as-is.
-  const lowered =
-    isCurrentPeriod || filter?.timeScope === "all" ? scopeLabel.toLowerCase() : scopeLabel;
-
-  const subtitle =
-    filter?.platform && filter.platform !== "all"
-      ? `${SHORT_LABELS[filter.platform] ?? filter.platform} · ${lowered}`
-      : scopeLabel;
-
-  return (
-    <div className="px-5 pt-2 pb-4">
-      <p className="text-[11px] font-medium tracking-widest uppercase text-neutral-500 mb-1.5">
-        {subtitle}
-      </p>
-      <p
-        className="text-5xl font-extrabold text-white leading-none"
-        style={{ fontVariantNumeric: "tabular-nums" }}
-      >
-        RM{total.toFixed(2)}
-      </p>
-      <p className="text-sm text-neutral-500 mt-2 leading-snug">
-        {t.socsoCredited(socso.toFixed(2))}
-        {shiftCount > 0 && <span> &middot; {t.shiftCount(shiftCount)}</span>}
-      </p>
-    </div>
-  );
-}
-
-function Toast({ data, onUndo }) {
-  const { t } = useLang();
-
-  if (data.type === "undo") {
-    return (
-      <div
-        role="status"
-        aria-live="polite"
-        className="animate-toast-in absolute top-[60px] left-4 right-4 z-50 bg-card border border-card-edge rounded-2xl px-4 py-3 shadow-2xl flex items-center justify-between gap-3"
-      >
-        <p className="text-sm font-bold text-white">{t.shiftDeleted}</p>
-        <button
-          onClick={onUndo}
-          className="text-sm font-bold text-accent shrink-0 focus-visible:outline-2 focus-visible:outline-accent rounded"
-        >
-          {t.undoLabel}
-        </button>
-      </div>
-    );
-  }
-
-  if (data.type === "error") {
-    return (
-      <div
-        role="status"
-        aria-live="polite"
-        className="animate-toast-in absolute top-[60px] left-4 right-4 z-50 bg-red-950 border border-red-800 rounded-2xl px-4 py-3 shadow-2xl"
-      >
-        <p className="text-sm text-red-300">{data.message}</p>
-      </div>
-    );
-  }
-
-  // type === "shift" — newly logged shift confirmation
-  return (
-    <div
-      role="status"
-      aria-live="polite"
-      className="animate-toast-in absolute top-[60px] left-4 right-4 z-50 bg-card border border-card-edge rounded-2xl px-4 py-3 shadow-2xl"
-    >
-      <p className="text-sm font-bold text-white">
-        RM{data.shift.amount.toFixed(2)} — {platformLabel(data.shift.platform)}
-      </p>
-      <p className="text-xs text-neutral-400 mt-0.5">
-        SOCSO: RM{data.shift.socso_deducted.toFixed(2)} · {t.protectedStatus}
-      </p>
-    </div>
   );
 }
 
@@ -264,9 +62,22 @@ export default function App() {
   const [anchor, setAnchor] = useState(() => new Date());
   const [tab, setTab] = useState("home");
   const [logOpen, setLogOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [logPulse, setLogPulse] = useState(false);
+  const pulseTimer = useRef(null);
+  const [expenses, setExpenses] = useState([]);
+
+  const { eveningReminder } = useSettings();
 
   const allShifts = data?.shifts ?? [];
+
+  useEveningReminder({
+    enabled: eveningReminder,
+    shifts: allShifts,
+    title: t.reminderTitle ?? "Worked today?",
+    body: t.reminderBody ?? "Log it in 2 taps before you forget.",
+  });
 
   const visibleShifts = useMemo(
     () => (pendingDelete ? allShifts.filter((s) => s.id !== pendingDelete.id) : allShifts),
@@ -293,6 +104,27 @@ export default function App() {
     }
     return result;
   }, [visibleShifts, filter, anchor]);
+
+  // Expenses carry no platform, so they're only attributable to the whole
+  // period — hide them (and the net line) when a platform filter is active.
+  const filteredExpenses = useMemo(() => {
+    if (filter.platform !== "all") return [];
+    if (filter.timeScope === "week") {
+      const start = mondayOf(anchor);
+      const end = addDays(start, 7);
+      return expenses.filter((e) => {
+        const d = new Date(e.logged_at);
+        return d >= start && d < end;
+      });
+    }
+    if (filter.timeScope === "month") {
+      return expenses.filter((e) => {
+        const d = new Date(e.logged_at);
+        return d.getUTCFullYear() === anchor.getUTCFullYear() && d.getUTCMonth() === anchor.getUTCMonth();
+      });
+    }
+    return expenses;
+  }, [expenses, filter, anchor]);
 
   const isCurrentPeriod = useMemo(() => {
     const now = new Date();
@@ -322,8 +154,9 @@ export default function App() {
     if (!userId) return;
     try {
       setLoadError(null);
-      const res = await fetchShifts(userId);
+      const [res, exp] = await Promise.all([fetchShifts(userId), fetchExpenses(userId)]);
       setData(res);
+      setExpenses(exp.expenses ?? []);
     } catch (err) {
       console.error(err);
       setLoadError(true); // translated at render so a language toggle doesn't refetch
@@ -339,6 +172,7 @@ export default function App() {
   useEffect(() => () => {
     clearTimeout(toastTimer.current);
     clearTimeout(deleteTimer.current);
+    clearTimeout(pulseTimer.current);
   }, []);
 
   function handleLogged(shift) {
@@ -346,6 +180,26 @@ export default function App() {
     clearTimeout(toastTimer.current);
     setToast({ type: "shift", shift });
     toastTimer.current = setTimeout(() => setToast(null), 4000);
+    setLogPulse(true);
+    clearTimeout(pulseTimer.current);
+    pulseTimer.current = setTimeout(() => setLogPulse(false), 700);
+  }
+
+  function showMessageToast(text) {
+    refresh();
+    clearTimeout(toastTimer.current);
+    setToast({ type: "message", text });
+    toastTimer.current = setTimeout(() => setToast(null), 4000);
+  }
+
+  async function handleDeleteExpense(expense) {
+    setExpenses((prev) => prev.filter((e) => e.id !== expense.id)); // optimistic
+    try {
+      await deleteExpense({ expenseId: expense.id, userId });
+    } catch {
+      setToast({ type: "error", message: t.networkError });
+      refresh();
+    }
   }
 
   function handleDelete(shift) {
@@ -390,58 +244,7 @@ export default function App() {
   }
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center py-10 px-4"
-      style={{
-        background: "radial-gradient(ellipse 70% 60% at 50% 30%, #111 0%, #050505 70%)",
-      }}
-    >
-      {/* Phone bezel */}
-      <div
-        className="relative shrink-0"
-        style={{
-          width: 390,
-          height: 844,
-          background: "linear-gradient(160deg, #1c1c1e 0%, #0c0c0c 100%)",
-          borderRadius: 54,
-          boxShadow:
-            "0 0 0 1px #2a2a2a, 0 40px 100px rgba(0,0,0,0.85), inset 0 0 0 1px #333",
-        }}
-      >
-        {/* Volume buttons */}
-        <div
-          className="absolute bg-[#252525] rounded-l-sm"
-          style={{ left: -3, top: 120, width: 3, height: 32 }}
-        />
-        <div
-          className="absolute bg-[#252525] rounded-l-sm"
-          style={{ left: -3, top: 168, width: 3, height: 56 }}
-        />
-        <div
-          className="absolute bg-[#252525] rounded-l-sm"
-          style={{ left: -3, top: 236, width: 3, height: 56 }}
-        />
-        {/* Power button */}
-        <div
-          className="absolute bg-[#252525] rounded-r-sm"
-          style={{ right: -3, top: 184, width: 3, height: 80 }}
-        />
-
-        {/* Screen */}
-        <div
-          className="absolute overflow-hidden flex flex-col"
-          style={{ inset: 6, borderRadius: 48, background: "#0a0a0a" }}
-        >
-          {/* Screen glare */}
-          <div
-            className="absolute inset-0 pointer-events-none z-50"
-            style={{
-              borderRadius: 48,
-              background:
-                "linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 45%)",
-            }}
-          />
-
+    <PhoneFrame>
           <StatusBar />
 
           {/* Scrollable content */}
@@ -480,15 +283,24 @@ export default function App() {
                 </p>
               )}
               {loadError && (
-                <p className="text-xs text-red-400 px-5">{t.couldntLoad}</p>
+                <div className="px-5 flex items-center gap-3">
+                  <p className="text-xs text-red-400 flex-1">{t.couldntLoad}</p>
+                  <button
+                    onClick={refresh}
+                    className="text-xs font-semibold text-accent shrink-0 px-2.5 py-1 rounded-lg border border-accent/30 hover:bg-accent/10 transition-colors focus-visible:outline-2 focus-visible:outline-accent"
+                  >
+                    {t.retryLabel ?? "Retry"}
+                  </button>
+                </div>
               )}
 
               {tab === "home" && (
                 <div
+                  key="home"
                   role="tabpanel"
                   id="panel-home"
                   aria-labelledby="tab-home"
-                  className="space-y-3"
+                  className="space-y-3 animate-fade-in"
                 >
                   <FilterBar
                     filter={filter}
@@ -503,6 +315,7 @@ export default function App() {
                     filter={filter}
                     anchor={anchor}
                     isCurrentPeriod={isCurrentPeriod}
+                    expensesTotal={filteredExpenses.reduce((s, e) => s + e.amount, 0)}
                   />
                   <ChartsCard
                     filteredShifts={filteredShifts}
@@ -511,6 +324,7 @@ export default function App() {
                     isCurrentPeriod={isCurrentPeriod}
                   />
                   <InsightsCard shifts={visibleShifts} />
+                  <WeeklyDigest shifts={visibleShifts} expenses={expenses} />
                   <EarningsSummary
                     filteredShifts={filteredShifts}
                     filteredSummary={filteredSummary}
@@ -518,6 +332,11 @@ export default function App() {
                     onEdit={setEditingShift}
                     onClearFilters={handleClearFilters}
                     filter={filter}
+                  />
+                  <ExpensesCard
+                    expenses={filteredExpenses}
+                    onDelete={handleDeleteExpense}
+                    gross={filteredSummary?.total_earned ?? 0}
                   />
                   <ProjectionCard
                     summary={data?.summary}
@@ -530,13 +349,19 @@ export default function App() {
 
               {tab === "protection" && (
                 <div
+                  key="protection"
                   role="tabpanel"
                   id="panel-protection"
                   aria-labelledby="tab-protection"
-                  className="space-y-3"
+                  className="space-y-3 animate-fade-in"
                 >
-                  <ComplianceCard summary={data?.summary} defaultExpanded />
-                  <RightsCard />
+                  <ContributionLedger shifts={visibleShifts} />
+                  <ComplianceCard summary={data?.summary} />
+                  <AccidentCard />
+                  <SaraanCard />
+                  <RightsCard defaultExpanded />
+                  <RecordsCard shifts={visibleShifts} expenses={expenses} />
+                  <ProtectionLinks />
                   <footer className="px-5 pt-1 pb-3">
                     <p className="text-[11px] text-neutral-700 leading-relaxed">
                       {t.footer}
@@ -549,14 +374,27 @@ export default function App() {
             </div>
           </div>
 
-          <TabBar tab={tab} onChange={setTab} onLog={() => setLogOpen(true)} />
+          <TabBar tab={tab} onChange={setTab} onLog={() => setLogOpen(true)} pulsing={logPulse} />
 
           <ShiftLogger
             userId={userId}
+            shifts={visibleShifts}
             onLogged={handleLogged}
+            onExpenseLogged={(e) =>
+              showMessageToast(`−RM${e.amount.toFixed(2)} · ${t.expenseCategories[e.category] ?? e.category}`)
+            }
+            onImport={() => setImportOpen(true)}
             open={logOpen}
             onClose={() => setLogOpen(false)}
           />
+
+          {importOpen && (
+            <ImportSheet
+              userId={userId}
+              onClose={() => setImportOpen(false)}
+              onImported={(n) => showMessageToast(t.importedToast(n))}
+            />
+          )}
 
           {settingsOpen && <SettingsSheet onClose={() => setSettingsOpen(false)} />}
 
@@ -570,15 +408,6 @@ export default function App() {
             />
           )}
 
-          {/* Home indicator */}
-          <div
-            className="shrink-0 flex justify-center pb-2 pt-1"
-            style={{ background: "#0a0a0a" }}
-          >
-            <div className="w-32 h-1 bg-neutral-700 rounded-full" />
-          </div>
-        </div>
-      </div>
-    </div>
+    </PhoneFrame>
   );
 }

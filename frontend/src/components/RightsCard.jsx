@@ -37,9 +37,9 @@ function ScaleIcon() {
   );
 }
 
-export default function RightsCard() {
+export default function RightsCard({ defaultExpanded = false }) {
   const { t } = useLang();
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(defaultExpanded);
 
   return (
     <section className="mx-4 bg-card border border-card-edge rounded-2xl overflow-hidden">

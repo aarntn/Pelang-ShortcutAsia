@@ -4,18 +4,26 @@ import { auth } from "../firebase";
 
 const AuthContext = createContext({ userId: null, authError: null });
 
+// Demo mode: visiting with ?demo loads a fixed UID pre-seeded with sample data,
+// so the app can be shown off on any device without logging shifts first.
+const DEMO_UID = "demo-pelang-2026";
+const demoMode =
+  typeof window !== "undefined" &&
+  new URLSearchParams(window.location.search).has("demo");
+
 export function AuthProvider({ children }) {
-  const [userId, setUserId] = useState(null);
+  const [userId, setUserId] = useState(demoMode ? DEMO_UID : null);
   const [authError, setAuthError] = useState(null);
 
   useEffect(() => {
+    if (demoMode) return; // skip anonymous sign-in; use the shared demo UID
     const unsub = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUserId(user.uid);
         // Dev helper: UID visible in console and copyable via window.__uid
         if (import.meta.env.DEV) {
           window.__uid = user.uid;
-          console.info(`[GigShield] UID: ${user.uid}  (window.__uid to copy)`);
+          console.info(`[Pelang] UID: ${user.uid}  (window.__uid to copy)`);
         }
       } else {
         signInAnonymously(auth).catch((err) => {

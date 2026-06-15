@@ -39,7 +39,8 @@ const ICONS = { home: HomeIcon, protection: ShieldIcon };
 // tab = "home" | "protection"
 // onChange = (id) => void
 // onLog = () => void (opens the shift logger)
-export default function TabBar({ tab, onChange, onLog }) {
+// pulsing = bool (triggers emerald ring burst on shift logged)
+export default function TabBar({ tab, onChange, onLog, pulsing }) {
   const { t } = useLang();
   const tabRefs = useRef({});
 
@@ -113,6 +114,12 @@ export default function TabBar({ tab, onChange, onLog }) {
         aria-label={t.logShift}
         className="absolute left-1/2 -translate-x-1/2 -top-5 w-14 h-14 rounded-full bg-accent text-neutral-950 flex items-center justify-center shadow-lg shadow-emerald-950/40 active:scale-95 transition-transform hover:brightness-105 focus-visible:outline-2 focus-visible:outline-white"
       >
+        {pulsing && (
+          <span
+            aria-hidden="true"
+            className="animate-fab-ring absolute inset-0 rounded-full bg-accent pointer-events-none"
+          />
+        )}
         <svg
           viewBox="0 0 24 24"
           fill="none"

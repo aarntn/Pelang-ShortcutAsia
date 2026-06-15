@@ -1,9 +1,11 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { signOut } from "firebase/auth";
 import { auth } from "../firebase";
+import { PLATFORMS } from "../platforms";
 
-const STORAGE_KEY = "gigshield-settings";
-const DEFAULTS = { defaultPlatform: "grab", showZakat: false, weeklyGoal: 0 };
+const STORAGE_KEY = "pelang-settings";
+const LANG_KEY = "pelang-lang"; // kept in sync with LanguageContext
+const DEFAULTS = { defaultPlatform: "grab", showZakat: false, weeklyGoal: 0, eveningReminder: false, customPlatforms: [] };
 
 function loadSettings() {
   try {
@@ -40,11 +42,30 @@ export function SettingsProvider({ children }) {
     setSettings((s) => ({ ...s, showZakat }));
   const setWeeklyGoal = (weeklyGoal) =>
     setSettings((s) => ({ ...s, weeklyGoal }));
+  const setEveningReminder = (eveningReminder) =>
+    setSettings((s) => ({ ...s, eveningReminder }));
+
+  const addCustomPlatform = (label) => {
+    const id = label.trim().toLowerCase().replace(/\s+/g, "_");
+    if (!id) return;
+    setSettings((s) => {
+      const existing = [...PLATFORMS.map((p) => p.id), ...(s.customPlatforms ?? []).map((p) => p.id)];
+      if (existing.includes(id)) return s;
+      return { ...s, customPlatforms: [...(s.customPlatforms ?? []), { id, label: label.trim() }] };
+    });
+  };
+
+  const removeCustomPlatform = (id) =>
+    setSettings((s) => ({
+      ...s,
+      customPlatforms: (s.customPlatforms ?? []).filter((p) => p.id !== id),
+      defaultPlatform: s.defaultPlatform === id ? "grab" : s.defaultPlatform,
+    }));
 
   async function clearData() {
     try {
       localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem("gigshield-lang");
+      localStorage.removeItem(LANG_KEY);
       await signOut(auth); // anonymous auth issues a fresh UID on reload
     } finally {
       window.location.reload();
@@ -53,7 +74,7 @@ export function SettingsProvider({ children }) {
 
   return (
     <SettingsContext.Provider
-      value={{ ...settings, setDefaultPlatform, setShowZakat, setWeeklyGoal, clearData }}
+      value={{ ...settings, setDefaultPlatform, setShowZakat, setWeeklyGoal, setEveningReminder, addCustomPlatform, removeCustomPlatform, clearData }}
     >
       {children}
     </SettingsContext.Provider>

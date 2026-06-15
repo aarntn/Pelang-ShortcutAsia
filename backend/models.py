@@ -1,4 +1,4 @@
-"""Pydantic models for GigShield MY."""
+"""Pydantic models for Pelang."""
 from datetime import date, datetime, timedelta, timezone
 from enum import Enum
 from typing import Optional
@@ -80,6 +80,71 @@ class ShiftUpdate(BaseModel):
         return _validate_logged_date(v)
 
 
+class BulkShiftItem(BaseModel):
+    """One row of an imported earnings statement."""
+    platform: Platform
+    amount: float = Field(..., gt=0, le=10_000)
+    logged_date: date  # statements always carry a date
+
+    @field_validator("amount")
+    @classmethod
+    def round_to_sen(cls, v: float) -> float:
+        return round(v, 2)
+
+    @field_validator("logged_date")
+    @classmethod
+    def within_bounds(cls, v: date) -> date:
+        return _validate_logged_date(v)
+
+
+class BulkShiftCreate(BaseModel):
+    """Payload for POST /shifts/bulk (statement import)."""
+    user_id: str = Field(..., min_length=1)
+    shifts: list[BulkShiftItem] = Field(..., min_length=1, max_length=200)
+
+
+class BulkShiftResponse(BaseModel):
+    created: int
+
+
+class ExpenseCategory(str, Enum):
+    FUEL = "fuel"
+    DATA = "data"
+    MAINTENANCE = "maintenance"
+    OTHER = "other"
+
+
+class ExpenseCreate(BaseModel):
+    """Payload for POST /expenses."""
+    user_id: str = Field(..., min_length=1)
+    category: ExpenseCategory
+    amount: float = Field(..., gt=0, le=10_000, description="RM spent")
+    logged_date: Optional[date] = None
+
+    @field_validator("amount")
+    @classmethod
+    def round_to_sen(cls, v: float) -> float:
+        return round(v, 2)
+
+    @field_validator("logged_date")
+    @classmethod
+    def within_bounds(cls, v: Optional[date]) -> Optional[date]:
+        return _validate_logged_date(v)
+
+
+class Expense(BaseModel):
+    """A stored expense document."""
+    id: str
+    user_id: str
+    category: ExpenseCategory
+    amount: float
+    logged_at: datetime
+
+
+class ExpensesResponse(BaseModel):
+    expenses: list[Expense]
+
+
 class DeleteResponse(BaseModel):
     deleted: str
 
@@ -105,3 +170,33 @@ class UserProfile(BaseModel):
     platform_default: Optional[Platform] = None
     created_at: datetime
     epf_nudge_sent: bool = False
+
+
+ALLOWED_MIME_TYPES = {"image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"}
+
+
+class OcrRequest(BaseModel):
+    """Payload for POST /ocr-shift."""
+    image_base64: str = Field(..., description="Base64-encoded image, max ~3 MB raw")
+    mime_type: str = Field(default="image/jpeg")
+
+    @field_validator("mime_type")
+    @classmethod
+    def validate_mime(cls, v: str) -> str:
+        if v not in ALLOWED_MIME_TYPES:
+            raise ValueError(f"mime_type must be one of {ALLOWED_MIME_TYPES}")
+        return v
+
+    @field_validator("image_base64")
+    @classmethod
+    def validate_size(cls, v: str) -> str:
+        if len(v) > 4_200_000:  # ~3 MB raw after base64 overhead
+            raise ValueError("Image too large — compress to under 3 MB before uploading")
+        return v
+
+
+class OcrResult(BaseModel):
+    """Response from POST /ocr-shift."""
+    amount: Optional[float] = None
+    platform: str = "other"
+    confidence: str = "low"  # "high" | "low"
