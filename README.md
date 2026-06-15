@@ -15,15 +15,36 @@ The scope was deliberately kept to two well-developed features (depth over bread
 1. **Shift income logger** — pick a platform and type the amount on a Touch 'n Go-style reverse-decimal keypad; SOCSO (1.25%) is auto-calculated and stored server-side. Feeds a cross-platform dashboard: hero earnings figure, weekly/monthly/all-time filters, per-platform breakdown, projections, and expense-adjusted net income.
 2. **Protection status** — live SOCSO coverage for the current week, an i-Saraan Plus EPF nudge, and plain-language rights explainers tied to the Gig Workers Act 2025 (Act 872).
 
-## Enhancements (added after the core was solid)
+## Everything else it does
 
-Built as unique selling points once the two core features worked — not as half-finished extras:
+Built around the two core features once they were solid — depth first, then breadth:
 
+**Logging & input**
 - **Screenshot OCR** — snap your in-app earnings screen; Google Gemini reads the RM total and platform and pre-fills the form (you still confirm before logging).
-- **Penyata Pendapatan** — generates a bilingual, print-ready income statement (browser print-to-PDF) for loan or grant applications.
-- **Custom platforms** — add platforms not in the preset list (e.g. Bolt).
-- **Bilingual** — full English / Bahasa Melayu toggle.
-- **Installable PWA** with offline-tolerant caching.
+- **Touch 'n Go-style amount entry** — digits fill from the right of the decimal, so there's no misplaced decimal point.
+- **Repeat & quick-amount chips** — one tap to re-log your last shift or a frequent amount.
+- **Backdated logging** — log a shift for an earlier date; the server recomputes the SOCSO week.
+- **Edit / delete shifts** — with a 5-second undo on delete.
+- **CSV statement import** — bulk-import a platform earnings export.
+- **Custom platforms** — add operators not in the preset list (e.g. Bolt).
+
+**Dashboard & insights**
+- **Filters & period navigation** — this week / month / all-time, with chevrons to page through past periods (honest date-range labels, never a fake "this week").
+- **Charts & breakdown** — earnings over time and a per-platform split.
+- **Income projection** — month-end estimate, with an optional *zakat pendapatan* (2.5%) toggle.
+- **Expense tracking** — fuel / data / maintenance / other, surfaced as expense-adjusted net income.
+- **Rule-based insight cards** — weekly-goal pacing, week-over-week change, best platform, strongest day, and an i-Saraan nudge.
+- **Weekly goal** and a **weekly digest** summary.
+
+**Records & export**
+- **Penyata Pendapatan** — bilingual, print-ready income statement (browser print-to-PDF) for loan, tenancy, or LHDN purposes.
+- **Monthly consistency bars** and a **raw CSV export** of all shifts + expenses.
+
+**Protection & rights** (the second tab)
+- Live SOCSO coverage status, a **SOCSO contribution ledger**, **i-Saraan Plus EPF** info, **work-accident / PERKESO claim** guidance, plain-language **rights explainers** (Act 872), and direct links to PERKESO / KWSP.
+
+**Experience**
+- **Bilingual** English / Bahasa Melayu · **installable PWA** with offline-tolerant caching · **anonymous auth** (no login screen) · optional **evening reminder** notification · subtle **reward animations** · **demo mode** (`?demo`).
 
 ## Tech stack
 
