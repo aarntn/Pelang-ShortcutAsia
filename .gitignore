@@ -1,8 +1,33 @@
+# Dependencies
 node_modules/
-dist/
 .venv/
+venv/
+
+# Build output
+dist/
+build/
+
+# Python
 __pycache__/
 *.pyc
+
+# Secrets — never commit credentials
 .env
+.env.*
+!.env.example
 serviceAccount.json
+service-account.json
+*service-account*.json
+*serviceaccount*.json
+*.pem
+*-key.json
+firebase-adminsdk*.json
+
+# Vercel
+.vercel
+
+# OS / editor
 .DS_Store
+Thumbs.db
+.idea/
+*.swp
