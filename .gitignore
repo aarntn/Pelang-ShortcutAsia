@@ -26,6 +26,10 @@ firebase-adminsdk*.json
 # Vercel
 .vercel
 
+# AI tooling / planning artifacts — not product code
+**/docs/superpowers/
+.claude/
+
 # OS / editor
 .DS_Store
 Thumbs.db
