@@ -46,7 +46,9 @@ export function SettingsProvider({ children }) {
     setSettings((s) => ({ ...s, eveningReminder }));
 
   const addCustomPlatform = (label) => {
-    const id = label.trim().toLowerCase().replace(/\s+/g, "_");
+    // Slug allows only [a-z0-9_] so a custom name can never carry HTML
+    // metacharacters into the generated income statement (see RecordsCard).
+    const id = label.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
     if (!id) return;
     setSettings((s) => {
       const existing = [...PLATFORMS.map((p) => p.id), ...(s.customPlatforms ?? []).map((p) => p.id)];

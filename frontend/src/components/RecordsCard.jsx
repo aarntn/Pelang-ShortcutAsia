@@ -2,6 +2,9 @@ import { useMemo, useState } from "react";
 import { useLang } from "../context/LanguageContext";
 import { PLATFORMS, platformLabel } from "../platforms";
 
+// Escape any dynamic value interpolated into the generated-statement HTML.
+const esc = (v) => String(v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
 const rm0 = (v) => `RM${Math.round(v).toLocaleString("en-MY")}`;
 const rm2 = (v) => `RM${v.toLocaleString("en-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -45,7 +48,7 @@ function printIncomeStatement(shifts, expenses, period, lang) {
     .sort((a, b) => b[1].gross - a[1].gross)
     .map(([id, d]) => `
       <tr>
-        <td>${platformLabel(id)}</td>
+        <td>${esc(platformLabel(id))}</td>
         <td class="num">${d.count}</td>
         <td class="num">${rm2(d.gross)}</td>
         <td class="num dim">${rm2(d.perkeso)}</td>
@@ -114,7 +117,7 @@ function printIncomeStatement(shifts, expenses, period, lang) {
     </div>
     <div class="meta-row">
       <span class="meta-label">Platform</span>
-      <span class="meta-value">${Object.keys(byPlatform).map(platformLabel).join(", ")}</span>
+      <span class="meta-value">${Object.keys(byPlatform).map((id) => esc(platformLabel(id))).join(", ")}</span>
     </div>
   </div>
 

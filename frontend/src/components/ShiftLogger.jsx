@@ -336,7 +336,7 @@ export default function ShiftLogger({ userId, shifts, onLogged, onExpenseLogged,
         style={{ background: "#1a1a1a", border: "1px solid #2a2a2a" }}
         onClick={() => inputRef.current?.focus()}
       >
-        <span className="text-neutral-500 font-semibold text-xl mr-2 shrink-0select-none">RM</span>
+        <span className="text-neutral-500 font-semibold text-xl mr-2 shrink-0 select-none">RM</span>
         {/* Visual display — shows formatted cents value */}
         <span
           aria-hidden="true"
