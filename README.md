@@ -59,7 +59,6 @@ Built around the two core features once they were solid — depth first, then br
 
 - **App:** https://pelang-my.vercel.app
 - **Demo data:** https://pelang-my.vercel.app/?demo — loads a pre-seeded account (~120 shifts + expenses across Apr–Jun) so the dashboard, insights, and statement generator all have data to show. Without `?demo`, every visitor gets their own private, empty account.
-- **Demo video:** _<add YouTube (unlisted) or Google Drive link here>_
 
 ## Run locally
 
